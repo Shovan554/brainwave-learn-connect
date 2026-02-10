@@ -1,0 +1,331 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy, Users, AlertTriangle } from "lucide-react";
+
+export default function CourseDetail() {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [course, setCourse] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Syllabus
+  const [syllabusFiles, setSyllabusFiles] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // Weekly content
+  const [weeks, setWeeks] = useState<any[]>([]);
+  const [newWeek, setNewWeek] = useState({ week_number: 1, title: "", description: "" });
+
+  // Assignments
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [newAssignment, setNewAssignment] = useState({
+    title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30,
+  });
+
+  // Students
+  const [students, setStudents] = useState<any[]>([]);
+
+  // Reports
+  const [reports, setReports] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!id || !user) return;
+    loadCourse();
+  }, [id, user]);
+
+  const loadCourse = async () => {
+    setLoading(true);
+    const [courseRes, filesRes, weeksRes, assignRes, enrollRes, reportsRes] = await Promise.all([
+      supabase.from("courses").select("*").eq("id", id!).single(),
+      supabase.from("course_files").select("*").eq("course_id", id!).order("created_at"),
+      supabase.from("weekly_content").select("*").eq("course_id", id!).order("week_number"),
+      supabase.from("assignments").select("*").eq("course_id", id!).order("due_date"),
+      supabase.from("enrollments").select("student_id, enrolled_at, profiles!inner(name, major)").eq("course_id", id!),
+      supabase.from("content_reports").select("*").eq("course_id", id!).order("created_at", { ascending: false }),
+    ]);
+    if (courseRes.data) setCourse(courseRes.data);
+    if (filesRes.data) setSyllabusFiles(filesRes.data);
+    if (weeksRes.data) setWeeks(weeksRes.data);
+    if (assignRes.data) setAssignments(assignRes.data);
+    if (enrollRes.data) setStudents(enrollRes.data as any);
+    if (reportsRes.data) setReports(reportsRes.data);
+    setLoading(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const filePath = `${user.id}/${id}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("course-files").upload(filePath, file);
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+    await supabase.from("course_files").insert({
+      course_id: id!, uploaded_by: user.id, file_url: urlData.publicUrl, file_name: file.name, file_type: "syllabus",
+    });
+    setUploading(false);
+    loadCourse();
+    toast({ title: "File uploaded" });
+  };
+
+  const addWeek = async () => {
+    if (!id) return;
+    const { error } = await supabase.from("weekly_content").insert({ course_id: id, ...newWeek });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setNewWeek({ week_number: (newWeek.week_number || 1) + 1, title: "", description: "" });
+    loadCourse();
+  };
+
+  const toggleWeekPublish = async (weekId: string, current: boolean) => {
+    await supabase.from("weekly_content").update({ is_published: !current }).eq("id", weekId);
+    loadCourse();
+  };
+
+  const addAssignment = async () => {
+    if (!id) return;
+    const { error } = await supabase.from("assignments").insert({
+      course_id: id,
+      title: newAssignment.title,
+      description: newAssignment.description,
+      due_date: newAssignment.due_date || null,
+      points: newAssignment.points,
+      weight: newAssignment.weight,
+      estimated_time_minutes: newAssignment.estimated_time_minutes,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setNewAssignment({ title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30 });
+    loadCourse();
+  };
+
+  const toggleAssignmentPublish = async (aId: string, current: boolean) => {
+    await supabase.from("assignments").update({ is_published: !current }).eq("id", aId);
+    loadCourse();
+  };
+
+  const copyInviteCode = () => {
+    navigator.clipboard.writeText(course?.invite_code || "");
+    toast({ title: "Copied!", description: "Invite code copied to clipboard" });
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!course) {
+    return <DashboardLayout><p>Course not found.</p></DashboardLayout>;
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
+          <p className="text-muted-foreground">{course.term}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={copyInviteCode}>
+          <Copy className="mr-2 h-3 w-3" />
+          {course.invite_code}
+        </Button>
+      </div>
+
+      <Tabs defaultValue="syllabus">
+        <TabsList className="mb-6">
+          <TabsTrigger value="syllabus">Syllabus</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger value="students">Students ({students.length})</TabsTrigger>
+          <TabsTrigger value="reports">Reports ({reports.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="syllabus">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Syllabus Files</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="syllabus-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Uploading..." : "Upload PDF/DOC"}
+                </Label>
+                <input id="syllabus-upload" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+              </div>
+              {syllabusFiles.map((f) => (
+                <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <a href={f.file_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline">{f.file_name}</a>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="weekly">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Add Week</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-4 gap-3">
+                  <Input type="number" placeholder="Week #" value={newWeek.week_number} onChange={(e) => setNewWeek({ ...newWeek, week_number: +e.target.value })} />
+                  <Input placeholder="Title" className="col-span-3" value={newWeek.title} onChange={(e) => setNewWeek({ ...newWeek, title: e.target.value })} />
+                </div>
+                <Textarea placeholder="Description" value={newWeek.description} onChange={(e) => setNewWeek({ ...newWeek, description: e.target.value })} rows={2} />
+                <Button size="sm" onClick={addWeek} disabled={!newWeek.title}>
+                  <Plus className="mr-2 h-3 w-3" /> Add Week
+                </Button>
+              </CardContent>
+            </Card>
+
+            {weeks.map((w) => (
+              <Card key={w.id}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-medium">Week {w.week_number}: {w.title}</p>
+                    <p className="text-sm text-muted-foreground">{w.description}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={w.is_published ? "default" : "secondary"}>
+                      {w.is_published ? "Published" : "Draft"}
+                    </Badge>
+                    <Switch checked={w.is_published} onCheckedChange={() => toggleWeekPublish(w.id, w.is_published)} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="assignments">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Create Assignment</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Title" value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+                <Textarea placeholder="Description" value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} />
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Due Date</Label>
+                    <Input type="datetime-local" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Points</Label>
+                    <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: +e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Weight %</Label>
+                    <Input type="number" value={newAssignment.weight} onChange={(e) => setNewAssignment({ ...newAssignment, weight: +e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Est. Minutes</Label>
+                    <Input type="number" value={newAssignment.estimated_time_minutes} onChange={(e) => setNewAssignment({ ...newAssignment, estimated_time_minutes: +e.target.value })} />
+                  </div>
+                </div>
+                <Button size="sm" onClick={addAssignment} disabled={!newAssignment.title}>
+                  <Plus className="mr-2 h-3 w-3" /> Create Assignment
+                </Button>
+              </CardContent>
+            </Card>
+
+            {assignments.map((a) => (
+              <Card key={a.id}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-medium">{a.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"} · {a.points} pts · {a.weight}% · ~{a.estimated_time_minutes}min
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={a.is_published ? "default" : "secondary"}>
+                      {a.is_published ? "Published" : "Draft"}
+                    </Badge>
+                    <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="students">
+          <Card>
+            <CardContent className="p-4">
+              {students.length === 0 ? (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <Users className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No students enrolled yet. Share the invite code: <strong>{course.invite_code}</strong></p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {students.map((s: any) => (
+                    <div key={s.student_id} className="flex items-center gap-3 rounded-lg border p-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {(s.profiles?.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{s.profiles?.name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground">{s.profiles?.major || "No major"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <Card>
+            <CardContent className="p-4">
+              {reports.length === 0 ? (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <AlertTriangle className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No reports submitted</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {reports.map((r) => (
+                    <div key={r.id} className="rounded-lg border p-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="destructive" className="text-xs">{r.reason}</Badge>
+                        <span className="text-xs text-muted-foreground">{r.target_type}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </DashboardLayout>
+  );
+}
