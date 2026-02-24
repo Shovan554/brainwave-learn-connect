@@ -75,13 +75,10 @@ export default function StudentDashboard() {
   const joinCourse = async () => {
     if (!user || !inviteCode.trim()) return;
     setJoining(true);
-    const { data: course } = await supabase
-      .from("courses")
-      .select("id")
-      .eq("invite_code", inviteCode.trim())
-      .single();
+    const { data: courseId } = await supabase
+      .rpc("get_course_id_by_invite_code", { _code: inviteCode.trim() });
 
-    if (!course) {
+    if (!courseId) {
       toast({ title: "Invalid code", description: "No course found with that invite code", variant: "destructive" });
       setJoining(false);
       return;
@@ -89,7 +86,7 @@ export default function StudentDashboard() {
 
     const { error } = await supabase
       .from("enrollments")
-      .insert({ course_id: course.id, student_id: user.id });
+      .insert({ course_id: courseId, student_id: user.id });
 
     if (error) {
       toast({ title: "Error", description: error.message.includes("duplicate") ? "Already enrolled" : error.message, variant: "destructive" });
