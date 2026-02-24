@@ -441,6 +441,7 @@ export type Database = {
         Args: { _assignment_id: string }
         Returns: string
       }
+      get_course_id_by_invite_code: { Args: { _code: string }; Returns: string }
       get_wc_course_id: { Args: { _wc_id: string }; Returns: string }
       has_role: {
         Args: {
