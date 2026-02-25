@@ -12,7 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy, Users, AlertTriangle } from "lucide-react";
+import { AICopilot } from "@/components/AICopilot";
+import {
+  Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
+  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp,
+} from "lucide-react";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -27,13 +31,20 @@ export default function CourseDetail() {
 
   // Weekly content
   const [weeks, setWeeks] = useState<any[]>([]);
+  const [weekAssets, setWeekAssets] = useState<Record<string, any[]>>({});
   const [newWeek, setNewWeek] = useState({ week_number: 1, title: "", description: "" });
+  const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [newAssetLink, setNewAssetLink] = useState("");
+  const [newAssetName, setNewAssetName] = useState("");
+  const [uploadingAsset, setUploadingAsset] = useState(false);
 
   // Assignments
   const [assignments, setAssignments] = useState<any[]>([]);
   const [newAssignment, setNewAssignment] = useState({
     title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30,
   });
+  const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
@@ -53,13 +64,49 @@ export default function CourseDetail() {
       supabase.from("course_files").select("*").eq("course_id", id!).order("created_at"),
       supabase.from("weekly_content").select("*").eq("course_id", id!).order("week_number"),
       supabase.from("assignments").select("*").eq("course_id", id!).order("due_date"),
-      supabase.from("enrollments").select("student_id, enrolled_at, profiles!inner(name, major)").eq("course_id", id!),
+      supabase.from("enrollments").select("student_id, enrolled_at, profiles!inner(name, major, user_id)").eq("course_id", id!),
       supabase.from("content_reports").select("*").eq("course_id", id!).order("created_at", { ascending: false }),
     ]);
     if (courseRes.data) setCourse(courseRes.data);
     if (filesRes.data) setSyllabusFiles(filesRes.data);
-    if (weeksRes.data) setWeeks(weeksRes.data);
-    if (assignRes.data) setAssignments(assignRes.data);
+    if (weeksRes.data) {
+      setWeeks(weeksRes.data);
+      // Load assets for all weeks
+      const weekIds = weeksRes.data.map((w: any) => w.id);
+      if (weekIds.length > 0) {
+        const { data: assets } = await supabase
+          .from("weekly_content_assets")
+          .select("*")
+          .in("weekly_content_id", weekIds);
+        if (assets) {
+          const grouped: Record<string, any[]> = {};
+          for (const a of assets) {
+            if (!grouped[a.weekly_content_id]) grouped[a.weekly_content_id] = [];
+            grouped[a.weekly_content_id].push(a);
+          }
+          setWeekAssets(grouped);
+        }
+      }
+    }
+    if (assignRes.data) {
+      setAssignments(assignRes.data);
+      // Load submissions for all assignments
+      const assignIds = assignRes.data.map((a: any) => a.id);
+      if (assignIds.length > 0) {
+        const { data: subs } = await supabase
+          .from("assignment_submissions")
+          .select("*, profiles:student_id(name, major)")
+          .in("assignment_id", assignIds);
+        if (subs) {
+          const grouped: Record<string, any[]> = {};
+          for (const s of subs) {
+            if (!grouped[s.assignment_id]) grouped[s.assignment_id] = [];
+            grouped[s.assignment_id].push(s);
+          }
+          setSubmissions(grouped);
+        }
+      }
+    }
     if (enrollRes.data) setStudents(enrollRes.data as any);
     if (reportsRes.data) setReports(reportsRes.data);
     setLoading(false);
@@ -98,16 +145,48 @@ export default function CourseDetail() {
     loadCourse();
   };
 
+  const addWeekAssetLink = async (weekId: string) => {
+    if (!newAssetLink.trim()) return;
+    await supabase.from("weekly_content_assets").insert({
+      weekly_content_id: weekId,
+      link_url: newAssetLink.trim(),
+      file_name: newAssetName.trim() || newAssetLink.trim(),
+    });
+    setNewAssetLink("");
+    setNewAssetName("");
+    loadCourse();
+  };
+
+  const handleWeekAssetUpload = async (weekId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAsset(true);
+    const filePath = `${user.id}/${id}/weeks/${weekId}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("course-files").upload(filePath, file);
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploadingAsset(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+    await supabase.from("weekly_content_assets").insert({
+      weekly_content_id: weekId,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+    });
+    setUploadingAsset(false);
+    loadCourse();
+  };
+
+  const deleteWeekAsset = async (assetId: string) => {
+    await supabase.from("weekly_content_assets").delete().eq("id", assetId);
+    loadCourse();
+  };
+
   const addAssignment = async () => {
     if (!id) return;
     const { error } = await supabase.from("assignments").insert({
-      course_id: id,
-      title: newAssignment.title,
-      description: newAssignment.description,
-      due_date: newAssignment.due_date || null,
-      points: newAssignment.points,
-      weight: newAssignment.weight,
-      estimated_time_minutes: newAssignment.estimated_time_minutes,
+      course_id: id, ...newAssignment, due_date: newAssignment.due_date || null,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setNewAssignment({ title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30 });
@@ -119,21 +198,20 @@ export default function CourseDetail() {
     loadCourse();
   };
 
+  const gradeSubmission = async (subId: string, grade: number, feedback: string) => {
+    await supabase.from("assignment_submissions").update({ grade, feedback, graded_at: new Date().toISOString() }).eq("id", subId);
+    loadCourse();
+    toast({ title: "Graded!" });
+  };
+
   const copyInviteCode = () => {
     navigator.clipboard.writeText(course?.invite_code || "");
     toast({ title: "Copied!", description: "Invite code copied to clipboard" });
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
   }
-
   if (!course) {
     return <DashboardLayout><p>Course not found.</p></DashboardLayout>;
   }
@@ -152,26 +230,26 @@ export default function CourseDetail() {
       </div>
 
       <Tabs defaultValue="syllabus">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="syllabus">Syllabus</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students ({students.length})</TabsTrigger>
+          <TabsTrigger value="ai">AI Tools</TabsTrigger>
           <TabsTrigger value="reports">Reports ({reports.length})</TabsTrigger>
         </TabsList>
 
+        {/* Syllabus Tab */}
         <TabsContent value="syllabus">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Syllabus Files</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Syllabus Files</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="syllabus-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted">
                   <Upload className="h-4 w-4" />
                   {uploading ? "Uploading..." : "Upload PDF/DOC"}
                 </Label>
-                <input id="syllabus-upload" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                <input id="syllabus-upload" type="file" accept=".pdf,.doc,.docx,.pptx,.ppt" className="hidden" onChange={handleFileUpload} disabled={uploading} />
               </div>
               {syllabusFiles.map((f) => (
                 <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
@@ -183,97 +261,135 @@ export default function CourseDetail() {
           </Card>
         </TabsContent>
 
+        {/* Weekly Content Tab */}
         <TabsContent value="weekly">
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Add Week</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">Add Week</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-4 gap-3">
                   <Input type="number" placeholder="Week #" value={newWeek.week_number} onChange={(e) => setNewWeek({ ...newWeek, week_number: +e.target.value })} />
                   <Input placeholder="Title" className="col-span-3" value={newWeek.title} onChange={(e) => setNewWeek({ ...newWeek, title: e.target.value })} />
                 </div>
                 <Textarea placeholder="Description" value={newWeek.description} onChange={(e) => setNewWeek({ ...newWeek, description: e.target.value })} rows={2} />
-                <Button size="sm" onClick={addWeek} disabled={!newWeek.title}>
-                  <Plus className="mr-2 h-3 w-3" /> Add Week
-                </Button>
+                <Button size="sm" onClick={addWeek} disabled={!newWeek.title}><Plus className="mr-2 h-3 w-3" /> Add Week</Button>
               </CardContent>
             </Card>
 
             {weeks.map((w) => (
               <Card key={w.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">Week {w.week_number}: {w.title}</p>
-                    <p className="text-sm text-muted-foreground">{w.description}</p>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <button className="flex items-center gap-2 text-left" onClick={() => setExpandedWeek(expandedWeek === w.id ? null : w.id)}>
+                      {expandedWeek === w.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      <div>
+                        <p className="font-medium">Week {w.week_number}: {w.title}</p>
+                        <p className="text-sm text-muted-foreground">{w.description}</p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <Badge variant={w.is_published ? "default" : "secondary"}>
+                        {w.is_published ? "Published" : "Draft"}
+                      </Badge>
+                      <Switch checked={w.is_published} onCheckedChange={() => toggleWeekPublish(w.id, w.is_published)} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={w.is_published ? "default" : "secondary"}>
-                      {w.is_published ? "Published" : "Draft"}
-                    </Badge>
-                    <Switch checked={w.is_published} onCheckedChange={() => toggleWeekPublish(w.id, w.is_published)} />
-                  </div>
+
+                  {expandedWeek === w.id && (
+                    <div className="mt-4 space-y-3 border-t pt-4">
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Materials</p>
+                      {(weekAssets[w.id] || []).map((asset) => (
+                        <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
+                          <div className="flex items-center gap-2">
+                            {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                            <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                              {asset.file_name || asset.link_url}
+                            </a>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWeekAsset(asset.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+
+                      <div className="flex gap-2">
+                        <Input placeholder="Link name" value={newAssetName} onChange={(e) => setNewAssetName(e.target.value)} className="flex-1" />
+                        <Input placeholder="https://..." value={newAssetLink} onChange={(e) => setNewAssetLink(e.target.value)} className="flex-1" />
+                        <Button size="sm" variant="outline" onClick={() => addWeekAssetLink(w.id)} disabled={!newAssetLink.trim()}>
+                          <LinkIcon className="mr-1 h-3 w-3" /> Add Link
+                        </Button>
+                      </div>
+                      <div>
+                        <Label htmlFor={`week-upload-${w.id}`} className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                          <Upload className="h-3 w-3" /> {uploadingAsset ? "Uploading..." : "Upload File (PDF, PPT, etc.)"}
+                        </Label>
+                        <input id={`week-upload-${w.id}`} type="file" className="hidden" onChange={(e) => handleWeekAssetUpload(w.id, e)} disabled={uploadingAsset} />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
+        {/* Assignments Tab */}
         <TabsContent value="assignments">
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Create Assignment</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">Create Assignment</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <Input placeholder="Title" value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
                 <Textarea placeholder="Description" value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} />
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Due Date</Label>
-                    <Input type="datetime-local" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Points</Label>
-                    <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: +e.target.value })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Weight %</Label>
-                    <Input type="number" value={newAssignment.weight} onChange={(e) => setNewAssignment({ ...newAssignment, weight: +e.target.value })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Est. Minutes</Label>
-                    <Input type="number" value={newAssignment.estimated_time_minutes} onChange={(e) => setNewAssignment({ ...newAssignment, estimated_time_minutes: +e.target.value })} />
-                  </div>
+                  <div className="space-y-1"><Label className="text-xs">Due Date</Label><Input type="datetime-local" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} /></div>
+                  <div className="space-y-1"><Label className="text-xs">Points</Label><Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: +e.target.value })} /></div>
+                  <div className="space-y-1"><Label className="text-xs">Weight %</Label><Input type="number" value={newAssignment.weight} onChange={(e) => setNewAssignment({ ...newAssignment, weight: +e.target.value })} /></div>
+                  <div className="space-y-1"><Label className="text-xs">Est. Minutes</Label><Input type="number" value={newAssignment.estimated_time_minutes} onChange={(e) => setNewAssignment({ ...newAssignment, estimated_time_minutes: +e.target.value })} /></div>
                 </div>
-                <Button size="sm" onClick={addAssignment} disabled={!newAssignment.title}>
-                  <Plus className="mr-2 h-3 w-3" /> Create Assignment
-                </Button>
+                <Button size="sm" onClick={addAssignment} disabled={!newAssignment.title}><Plus className="mr-2 h-3 w-3" /> Create Assignment</Button>
               </CardContent>
             </Card>
 
             {assignments.map((a) => (
               <Card key={a.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">{a.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"} · {a.points} pts · {a.weight}% · ~{a.estimated_time_minutes}min
-                    </p>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <button className="flex items-center gap-2 text-left" onClick={() => setExpandedAssignment(expandedAssignment === a.id ? null : a.id)}>
+                      {expandedAssignment === a.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      <div>
+                        <p className="font-medium">{a.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"} · {a.points} pts · {a.weight}% · ~{a.estimated_time_minutes}min
+                        </p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="text-xs">{(submissions[a.id] || []).length} submissions</Badge>
+                      <Badge variant={a.is_published ? "default" : "secondary"}>{a.is_published ? "Published" : "Draft"}</Badge>
+                      <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={a.is_published ? "default" : "secondary"}>
-                      {a.is_published ? "Published" : "Draft"}
-                    </Badge>
-                    <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
-                  </div>
+
+                  {expandedAssignment === a.id && (
+                    <div className="mt-4 space-y-3 border-t pt-4">
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
+                      {(submissions[a.id] || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No submissions yet</p>
+                      ) : (
+                        (submissions[a.id] || []).map((sub) => (
+                          <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
+                        ))
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
+        {/* Students Tab */}
         <TabsContent value="students">
           <Card>
             <CardContent className="p-4">
@@ -301,6 +417,12 @@ export default function CourseDetail() {
           </Card>
         </TabsContent>
 
+        {/* AI Tab */}
+        <TabsContent value="ai">
+          <AICopilot courseId={id!} mode="teacher" />
+        </TabsContent>
+
+        {/* Reports Tab */}
         <TabsContent value="reports">
           <Card>
             <CardContent className="p-4">
@@ -327,5 +449,34 @@ export default function CourseDetail() {
         </TabsContent>
       </Tabs>
     </DashboardLayout>
+  );
+}
+
+// Inline grader component
+function SubmissionGrader({ submission, onGrade }: { submission: any; onGrade: (id: string, grade: number, feedback: string) => void }) {
+  const [grade, setGrade] = useState(submission.grade?.toString() || "");
+  const [feedback, setFeedback] = useState(submission.feedback || "");
+
+  return (
+    <div className="rounded-lg border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">{(submission.profiles as any)?.name || "Student"}</p>
+          <p className="text-xs text-muted-foreground">Submitted {new Date(submission.submitted_at).toLocaleString()}</p>
+        </div>
+        {submission.graded_at && <Badge variant="default" className="text-xs">Graded: {submission.grade}</Badge>}
+      </div>
+      {submission.text_content && <p className="text-sm bg-muted rounded p-2">{submission.text_content}</p>}
+      {submission.file_url && (
+        <a href={submission.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+          <FileText className="h-3 w-3" /> {submission.file_name || "Download"}
+        </a>
+      )}
+      <div className="flex gap-2">
+        <Input placeholder="Grade" type="number" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-24" />
+        <Input placeholder="Feedback" value={feedback} onChange={(e) => setFeedback(e.target.value)} className="flex-1" />
+        <Button size="sm" onClick={() => onGrade(submission.id, +grade, feedback)} disabled={!grade}>Grade</Button>
+      </div>
+    </div>
   );
 }
