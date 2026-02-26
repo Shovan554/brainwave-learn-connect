@@ -209,10 +209,28 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const addWeekAssetLink = async (weekId: string) => {
+  const addFolder = async (weekId: string) => {
+    if (!newFolderName.trim()) return;
+    const existing = weekFolders[weekId] || [];
+    await supabase.from("weekly_content_folders").insert({
+      weekly_content_id: weekId,
+      name: newFolderName.trim(),
+      sort_order: existing.length,
+    });
+    setNewFolderName("");
+    loadCourse();
+  };
+
+  const deleteFolder = async (folderId: string) => {
+    await supabase.from("weekly_content_folders").delete().eq("id", folderId);
+    loadCourse();
+  };
+
+  const addAssetLink = async (folderId: string, weekId: string) => {
     if (!newAssetLink.trim()) return;
     await supabase.from("weekly_content_assets").insert({
       weekly_content_id: weekId,
+      folder_id: folderId,
       link_url: newAssetLink.trim(),
       file_name: newAssetName.trim() || newAssetLink.trim(),
     });
@@ -221,7 +239,7 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const handleWeekAssetUpload = async (weekId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAssetUpload = async (folderId: string, weekId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploadingAsset(true);
@@ -235,6 +253,7 @@ export default function CourseDetail() {
     const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
     await supabase.from("weekly_content_assets").insert({
       weekly_content_id: weekId,
+      folder_id: folderId,
       file_url: urlData.publicUrl,
       file_name: file.name,
     });
@@ -242,7 +261,7 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const deleteWeekAsset = async (assetId: string) => {
+  const deleteAsset = async (assetId: string) => {
     await supabase.from("weekly_content_assets").delete().eq("id", assetId);
     loadCourse();
   };
