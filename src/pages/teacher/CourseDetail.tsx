@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
-  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp,
+  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder,
 } from "lucide-react";
 
 export default function CourseDetail() {
@@ -31,9 +31,13 @@ export default function CourseDetail() {
 
   // Weekly content
   const [weeks, setWeeks] = useState<any[]>([]);
+  const [weekFolders, setWeekFolders] = useState<Record<string, any[]>>({});
+  const [folderAssets, setFolderAssets] = useState<Record<string, any[]>>({});
   const [weekAssets, setWeekAssets] = useState<Record<string, any[]>>({});
   const [newWeek, setNewWeek] = useState({ week_number: 1, title: "", description: "" });
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
   const [newAssetLink, setNewAssetLink] = useState("");
   const [newAssetName, setNewAssetName] = useState("");
   const [uploadingAsset, setUploadingAsset] = useState(false);
@@ -73,10 +77,43 @@ export default function CourseDetail() {
       setWeeks(weeksRes.data);
       const weekIds = weeksRes.data.map((w: any) => w.id);
       if (weekIds.length > 0) {
+        // Load folders for all weeks
+        const { data: folders } = await supabase
+          .from("weekly_content_folders")
+          .select("*")
+          .in("weekly_content_id", weekIds)
+          .order("sort_order");
+        if (folders) {
+          const groupedFolders: Record<string, any[]> = {};
+          for (const f of folders) {
+            if (!groupedFolders[f.weekly_content_id]) groupedFolders[f.weekly_content_id] = [];
+            groupedFolders[f.weekly_content_id].push(f);
+          }
+          setWeekFolders(groupedFolders);
+
+          // Load assets for all folders
+          const folderIds = folders.map((f: any) => f.id);
+          if (folderIds.length > 0) {
+            const { data: fAssets } = await supabase
+              .from("weekly_content_assets")
+              .select("*")
+              .in("folder_id", folderIds);
+            if (fAssets) {
+              const groupedAssets: Record<string, any[]> = {};
+              for (const a of fAssets) {
+                if (!groupedAssets[a.folder_id]) groupedAssets[a.folder_id] = [];
+                groupedAssets[a.folder_id].push(a);
+              }
+              setFolderAssets(groupedAssets);
+            }
+          }
+        }
+        // Load loose assets (no folder)
         const { data: assets } = await supabase
           .from("weekly_content_assets")
           .select("*")
-          .in("weekly_content_id", weekIds);
+          .in("weekly_content_id", weekIds)
+          .is("folder_id", null);
         if (assets) {
           const grouped: Record<string, any[]> = {};
           for (const a of assets) {
