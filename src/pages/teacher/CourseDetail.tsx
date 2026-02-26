@@ -64,14 +64,13 @@ export default function CourseDetail() {
       supabase.from("course_files").select("*").eq("course_id", id!).order("created_at"),
       supabase.from("weekly_content").select("*").eq("course_id", id!).order("week_number"),
       supabase.from("assignments").select("*").eq("course_id", id!).order("due_date"),
-      supabase.from("enrollments").select("student_id, enrolled_at, profiles!inner(name, major, user_id)").eq("course_id", id!),
+      supabase.from("enrollments").select("student_id, enrolled_at").eq("course_id", id!),
       supabase.from("content_reports").select("*").eq("course_id", id!).order("created_at", { ascending: false }),
     ]);
     if (courseRes.data) setCourse(courseRes.data);
     if (filesRes.data) setSyllabusFiles(filesRes.data);
     if (weeksRes.data) {
       setWeeks(weeksRes.data);
-      // Load assets for all weeks
       const weekIds = weeksRes.data.map((w: any) => w.id);
       if (weekIds.length > 0) {
         const { data: assets } = await supabase
@@ -90,24 +89,52 @@ export default function CourseDetail() {
     }
     if (assignRes.data) {
       setAssignments(assignRes.data);
-      // Load submissions for all assignments
       const assignIds = assignRes.data.map((a: any) => a.id);
       if (assignIds.length > 0) {
         const { data: subs } = await supabase
           .from("assignment_submissions")
-          .select("*, profiles:student_id(name, major)")
+          .select("*")
           .in("assignment_id", assignIds);
-        if (subs) {
+        if (subs && subs.length > 0) {
+          // Fetch profiles for submission students
+          const subStudentIds = [...new Set(subs.map((s: any) => s.student_id))];
+          const { data: subProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, name, major")
+            .in("user_id", subStudentIds);
+          const profileMap: Record<string, any> = {};
+          if (subProfiles) {
+            for (const p of subProfiles) profileMap[p.user_id] = p;
+          }
           const grouped: Record<string, any[]> = {};
           for (const s of subs) {
+            const enriched = { ...s, profiles: profileMap[s.student_id] || null };
             if (!grouped[s.assignment_id]) grouped[s.assignment_id] = [];
-            grouped[s.assignment_id].push(s);
+            grouped[s.assignment_id].push(enriched);
           }
           setSubmissions(grouped);
         }
       }
     }
-    if (enrollRes.data) setStudents(enrollRes.data as any);
+    // Fetch enrolled students with their profiles separately
+    if (enrollRes.data && enrollRes.data.length > 0) {
+      const studentIds = enrollRes.data.map((e: any) => e.student_id);
+      const { data: enrollProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, major")
+        .in("user_id", studentIds);
+      const profileMap: Record<string, any> = {};
+      if (enrollProfiles) {
+        for (const p of enrollProfiles) profileMap[p.user_id] = p;
+      }
+      const enriched = enrollRes.data.map((e: any) => ({
+        ...e,
+        profiles: profileMap[e.student_id] || null,
+      }));
+      setStudents(enriched);
+    } else {
+      setStudents([]);
+    }
     if (reportsRes.data) setReports(reportsRes.data);
     setLoading(false);
   };
