@@ -290,20 +290,50 @@ export default function StudentCourseDetail() {
                     </Dialog>
                   </div>
 
-                  {expandedWeek === w.id && (weekAssets[w.id] || []).length > 0 && (
-                    <div className="mt-3 space-y-2 border-t pt-3">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Materials</p>
-                      {(weekAssets[w.id] || []).map((asset) => (
-                        <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
-                          className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
-                          {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
-                          {asset.file_name || asset.link_url}
-                        </a>
+                  {expandedWeek === w.id && (
+                    <div className="mt-3 space-y-3 border-t pt-3">
+                      {/* Folders */}
+                      {(weekFolders[w.id] || []).map((folder) => (
+                        <div key={folder.id} className="rounded-lg border">
+                          <button className="flex w-full items-center gap-2 p-3 text-left" onClick={() => setExpandedFolder(expandedFolder === folder.id ? null : folder.id)}>
+                            {expandedFolder === folder.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <Folder className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">{folder.name}</span>
+                          </button>
+                          {expandedFolder === folder.id && (
+                            <div className="space-y-1 border-t px-3 pb-3 pt-2">
+                              {(folderAssets[folder.id] || []).length === 0 ? (
+                                <p className="text-xs text-muted-foreground">No materials yet</p>
+                              ) : (folderAssets[folder.id] || []).map((asset) => (
+                                <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                                  className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm hover:bg-muted">
+                                  {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                                  {asset.file_name || asset.link_url}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
+
+                      {/* Loose materials */}
+                      {(weekAssets[w.id] || []).length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Other Materials</p>
+                          {(weekAssets[w.id] || []).map((asset) => (
+                            <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                              className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
+                              {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                              {asset.file_name || asset.link_url}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {(weekFolders[w.id] || []).length === 0 && (weekAssets[w.id] || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">No materials added yet</p>
+                      )}
                     </div>
-                  )}
-                  {expandedWeek === w.id && (weekAssets[w.id] || []).length === 0 && (
-                    <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">No materials added yet</p>
                   )}
                 </CardContent>
               </Card>
