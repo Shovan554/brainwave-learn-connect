@@ -379,35 +379,84 @@ export default function CourseDetail() {
                   </div>
 
                   {expandedWeek === w.id && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Materials</p>
-                      {(weekAssets[w.id] || []).map((asset) => (
-                        <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
-                          <div className="flex items-center gap-2">
-                            {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-                            <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
-                              {asset.file_name || asset.link_url}
-                            </a>
+                    <div className="mt-4 space-y-4 border-t pt-4">
+                      {/* Folders */}
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Folders</p>
+                      {(weekFolders[w.id] || []).map((folder) => (
+                        <div key={folder.id} className="rounded-lg border">
+                          <div className="flex items-center justify-between p-3">
+                            <button className="flex items-center gap-2 text-left" onClick={() => setExpandedFolder(expandedFolder === folder.id ? null : folder.id)}>
+                              {expandedFolder === folder.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              <Folder className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">{folder.name}</span>
+                              <Badge variant="outline" className="text-xs">{(folderAssets[folder.id] || []).length}</Badge>
+                            </button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteFolder(folder.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWeekAsset(asset.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+
+                          {expandedFolder === folder.id && (
+                            <div className="space-y-2 border-t px-3 pb-3 pt-2">
+                              {(folderAssets[folder.id] || []).map((asset) => (
+                                <div key={asset.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                                  <div className="flex items-center gap-2">
+                                    {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                                    <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                                      {asset.file_name || asset.link_url}
+                                    </a>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAsset(asset.id)}>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <div className="flex gap-2">
+                                <Input placeholder="Link name" value={newAssetName} onChange={(e) => setNewAssetName(e.target.value)} className="flex-1" />
+                                <Input placeholder="https://..." value={newAssetLink} onChange={(e) => setNewAssetLink(e.target.value)} className="flex-1" />
+                                <Button size="sm" variant="outline" onClick={() => addAssetLink(folder.id, w.id)} disabled={!newAssetLink.trim()}>
+                                  <LinkIcon className="mr-1 h-3 w-3" /> Add
+                                </Button>
+                              </div>
+                              <div>
+                                <Label htmlFor={`folder-upload-${folder.id}`} className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                                  <Upload className="h-3 w-3" /> {uploadingAsset ? "Uploading..." : "Upload File"}
+                                </Label>
+                                <input id={`folder-upload-${folder.id}`} type="file" className="hidden" onChange={(e) => handleAssetUpload(folder.id, w.id, e)} disabled={uploadingAsset} />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
 
+                      {/* Add folder */}
                       <div className="flex gap-2">
-                        <Input placeholder="Link name" value={newAssetName} onChange={(e) => setNewAssetName(e.target.value)} className="flex-1" />
-                        <Input placeholder="https://..." value={newAssetLink} onChange={(e) => setNewAssetLink(e.target.value)} className="flex-1" />
-                        <Button size="sm" variant="outline" onClick={() => addWeekAssetLink(w.id)} disabled={!newAssetLink.trim()}>
-                          <LinkIcon className="mr-1 h-3 w-3" /> Add Link
+                        <Input placeholder="New folder name" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} className="flex-1" />
+                        <Button size="sm" variant="outline" onClick={() => addFolder(w.id)} disabled={!newFolderName.trim()}>
+                          <FolderPlus className="mr-1 h-3 w-3" /> Add Folder
                         </Button>
                       </div>
-                      <div>
-                        <Label htmlFor={`week-upload-${w.id}`} className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
-                          <Upload className="h-3 w-3" /> {uploadingAsset ? "Uploading..." : "Upload File (PDF, PPT, etc.)"}
-                        </Label>
-                        <input id={`week-upload-${w.id}`} type="file" className="hidden" onChange={(e) => handleWeekAssetUpload(w.id, e)} disabled={uploadingAsset} />
-                      </div>
+
+                      {/* Loose materials (no folder) */}
+                      {(weekAssets[w.id] || []).length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Ungrouped Materials</p>
+                          {(weekAssets[w.id] || []).map((asset) => (
+                            <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
+                              <div className="flex items-center gap-2">
+                                {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                                <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                                  {asset.file_name || asset.link_url}
+                                </a>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAsset(asset.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
