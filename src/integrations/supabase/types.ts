@@ -449,6 +449,7 @@ export type Database = {
           created_at: string
           file_name: string | null
           file_url: string | null
+          folder_id: string | null
           id: string
           link_url: string | null
           weekly_content_id: string
@@ -457,6 +458,7 @@ export type Database = {
           created_at?: string
           file_name?: string | null
           file_url?: string | null
+          folder_id?: string | null
           id?: string
           link_url?: string | null
           weekly_content_id: string
@@ -465,13 +467,53 @@ export type Database = {
           created_at?: string
           file_name?: string | null
           file_url?: string | null
+          folder_id?: string | null
           id?: string
           link_url?: string | null
           weekly_content_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "weekly_content_assets_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_content_folders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "weekly_content_assets_weekly_content_id_fkey"
+            columns: ["weekly_content_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_content_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          weekly_content_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          weekly_content_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          weekly_content_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_content_folders_weekly_content_id_fkey"
             columns: ["weekly_content_id"]
             isOneToOne: false
             referencedRelation: "weekly_content"
@@ -489,6 +531,7 @@ export type Database = {
         Returns: string
       }
       get_course_id_by_invite_code: { Args: { _code: string }; Returns: string }
+      get_folder_course_id: { Args: { _folder_id: string }; Returns: string }
       get_wc_course_id: { Args: { _wc_id: string }; Returns: string }
       has_role: {
         Args: {
