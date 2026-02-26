@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, FileText, Calendar, Clock, Film, Users, Flag,
-  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain,
+  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
 } from "lucide-react";
 
 export default function StudentCourseDetail() {
@@ -27,6 +27,8 @@ export default function StudentCourseDetail() {
   const [loading, setLoading] = useState(true);
   const [syllabusFiles, setSyllabusFiles] = useState<any[]>([]);
   const [weeks, setWeeks] = useState<any[]>([]);
+  const [weekFolders, setWeekFolders] = useState<Record<string, any[]>>({});
+  const [folderAssets, setFolderAssets] = useState<Record<string, any[]>>({});
   const [weekAssets, setWeekAssets] = useState<Record<string, any[]>>({});
   const [assignments, setAssignments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -34,6 +36,7 @@ export default function StudentCourseDetail() {
   const [reportTarget, setReportTarget] = useState<{ type: string; id: string } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
   const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
 
   // Submission form
@@ -52,7 +55,7 @@ export default function StudentCourseDetail() {
       supabase.from("course_files").select("*").eq("course_id", id!),
       supabase.from("weekly_content").select("*").eq("course_id", id!).eq("is_published", true).order("week_number"),
       supabase.from("assignments").select("*").eq("course_id", id!).eq("is_published", true).order("due_date"),
-      supabase.from("enrollments").select("student_id, profiles!inner(name, major, user_id)").eq("course_id", id!),
+      supabase.from("enrollments").select("student_id").eq("course_id", id!),
     ]);
     if (courseRes.data) setCourse(courseRes.data);
     if (filesRes.data) setSyllabusFiles(filesRes.data);
@@ -60,10 +63,42 @@ export default function StudentCourseDetail() {
       setWeeks(weeksRes.data);
       const weekIds = weeksRes.data.map((w: any) => w.id);
       if (weekIds.length > 0) {
+        // Load folders
+        const { data: folders } = await supabase
+          .from("weekly_content_folders")
+          .select("*")
+          .in("weekly_content_id", weekIds)
+          .order("sort_order");
+        if (folders) {
+          const groupedFolders: Record<string, any[]> = {};
+          for (const f of folders) {
+            if (!groupedFolders[f.weekly_content_id]) groupedFolders[f.weekly_content_id] = [];
+            groupedFolders[f.weekly_content_id].push(f);
+          }
+          setWeekFolders(groupedFolders);
+
+          const folderIds = folders.map((f: any) => f.id);
+          if (folderIds.length > 0) {
+            const { data: fAssets } = await supabase
+              .from("weekly_content_assets")
+              .select("*")
+              .in("folder_id", folderIds);
+            if (fAssets) {
+              const groupedAssets: Record<string, any[]> = {};
+              for (const a of fAssets) {
+                if (!groupedAssets[a.folder_id]) groupedAssets[a.folder_id] = [];
+                groupedAssets[a.folder_id].push(a);
+              }
+              setFolderAssets(groupedAssets);
+            }
+          }
+        }
+        // Loose assets
         const { data: assets } = await supabase
           .from("weekly_content_assets")
           .select("*")
-          .in("weekly_content_id", weekIds);
+          .in("weekly_content_id", weekIds)
+          .is("folder_id", null);
         if (assets) {
           const grouped: Record<string, any[]> = {};
           for (const a of assets) {
@@ -76,7 +111,6 @@ export default function StudentCourseDetail() {
     }
     if (assignRes.data) {
       setAssignments(assignRes.data);
-      // Load my submissions
       if (user) {
         const { data: subs } = await supabase
           .from("assignment_submissions")
@@ -89,7 +123,25 @@ export default function StudentCourseDetail() {
         }
       }
     }
-    if (enrollRes.data) setStudents(enrollRes.data as any);
+    // Fetch enrolled students with profiles separately
+    if (enrollRes.data && enrollRes.data.length > 0) {
+      const studentIds = enrollRes.data.map((e: any) => e.student_id);
+      const { data: enrollProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, major")
+        .in("user_id", studentIds);
+      const profileMap: Record<string, any> = {};
+      if (enrollProfiles) {
+        for (const p of enrollProfiles) profileMap[p.user_id] = p;
+      }
+      const enriched = enrollRes.data.map((e: any) => ({
+        ...e,
+        profiles: profileMap[e.student_id] || null,
+      }));
+      setStudents(enriched);
+    } else {
+      setStudents([]);
+    }
     setLoading(false);
   };
 
@@ -238,20 +290,50 @@ export default function StudentCourseDetail() {
                     </Dialog>
                   </div>
 
-                  {expandedWeek === w.id && (weekAssets[w.id] || []).length > 0 && (
-                    <div className="mt-3 space-y-2 border-t pt-3">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Materials</p>
-                      {(weekAssets[w.id] || []).map((asset) => (
-                        <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
-                          className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
-                          {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
-                          {asset.file_name || asset.link_url}
-                        </a>
+                  {expandedWeek === w.id && (
+                    <div className="mt-3 space-y-3 border-t pt-3">
+                      {/* Folders */}
+                      {(weekFolders[w.id] || []).map((folder) => (
+                        <div key={folder.id} className="rounded-lg border">
+                          <button className="flex w-full items-center gap-2 p-3 text-left" onClick={() => setExpandedFolder(expandedFolder === folder.id ? null : folder.id)}>
+                            {expandedFolder === folder.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <Folder className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">{folder.name}</span>
+                          </button>
+                          {expandedFolder === folder.id && (
+                            <div className="space-y-1 border-t px-3 pb-3 pt-2">
+                              {(folderAssets[folder.id] || []).length === 0 ? (
+                                <p className="text-xs text-muted-foreground">No materials yet</p>
+                              ) : (folderAssets[folder.id] || []).map((asset) => (
+                                <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                                  className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm hover:bg-muted">
+                                  {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                                  {asset.file_name || asset.link_url}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
+
+                      {/* Loose materials */}
+                      {(weekAssets[w.id] || []).length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Other Materials</p>
+                          {(weekAssets[w.id] || []).map((asset) => (
+                            <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                              className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
+                              {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                              {asset.file_name || asset.link_url}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {(weekFolders[w.id] || []).length === 0 && (weekAssets[w.id] || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">No materials added yet</p>
+                      )}
                     </div>
-                  )}
-                  {expandedWeek === w.id && (weekAssets[w.id] || []).length === 0 && (
-                    <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">No materials added yet</p>
                   )}
                 </CardContent>
               </Card>

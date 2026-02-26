@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
-  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp,
+  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder,
 } from "lucide-react";
 
 export default function CourseDetail() {
@@ -31,9 +31,13 @@ export default function CourseDetail() {
 
   // Weekly content
   const [weeks, setWeeks] = useState<any[]>([]);
+  const [weekFolders, setWeekFolders] = useState<Record<string, any[]>>({});
+  const [folderAssets, setFolderAssets] = useState<Record<string, any[]>>({});
   const [weekAssets, setWeekAssets] = useState<Record<string, any[]>>({});
   const [newWeek, setNewWeek] = useState({ week_number: 1, title: "", description: "" });
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
   const [newAssetLink, setNewAssetLink] = useState("");
   const [newAssetName, setNewAssetName] = useState("");
   const [uploadingAsset, setUploadingAsset] = useState(false);
@@ -73,10 +77,43 @@ export default function CourseDetail() {
       setWeeks(weeksRes.data);
       const weekIds = weeksRes.data.map((w: any) => w.id);
       if (weekIds.length > 0) {
+        // Load folders for all weeks
+        const { data: folders } = await supabase
+          .from("weekly_content_folders")
+          .select("*")
+          .in("weekly_content_id", weekIds)
+          .order("sort_order");
+        if (folders) {
+          const groupedFolders: Record<string, any[]> = {};
+          for (const f of folders) {
+            if (!groupedFolders[f.weekly_content_id]) groupedFolders[f.weekly_content_id] = [];
+            groupedFolders[f.weekly_content_id].push(f);
+          }
+          setWeekFolders(groupedFolders);
+
+          // Load assets for all folders
+          const folderIds = folders.map((f: any) => f.id);
+          if (folderIds.length > 0) {
+            const { data: fAssets } = await supabase
+              .from("weekly_content_assets")
+              .select("*")
+              .in("folder_id", folderIds);
+            if (fAssets) {
+              const groupedAssets: Record<string, any[]> = {};
+              for (const a of fAssets) {
+                if (!groupedAssets[a.folder_id]) groupedAssets[a.folder_id] = [];
+                groupedAssets[a.folder_id].push(a);
+              }
+              setFolderAssets(groupedAssets);
+            }
+          }
+        }
+        // Load loose assets (no folder)
         const { data: assets } = await supabase
           .from("weekly_content_assets")
           .select("*")
-          .in("weekly_content_id", weekIds);
+          .in("weekly_content_id", weekIds)
+          .is("folder_id", null);
         if (assets) {
           const grouped: Record<string, any[]> = {};
           for (const a of assets) {
@@ -172,10 +209,28 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const addWeekAssetLink = async (weekId: string) => {
+  const addFolder = async (weekId: string) => {
+    if (!newFolderName.trim()) return;
+    const existing = weekFolders[weekId] || [];
+    await supabase.from("weekly_content_folders").insert({
+      weekly_content_id: weekId,
+      name: newFolderName.trim(),
+      sort_order: existing.length,
+    });
+    setNewFolderName("");
+    loadCourse();
+  };
+
+  const deleteFolder = async (folderId: string) => {
+    await supabase.from("weekly_content_folders").delete().eq("id", folderId);
+    loadCourse();
+  };
+
+  const addAssetLink = async (folderId: string, weekId: string) => {
     if (!newAssetLink.trim()) return;
     await supabase.from("weekly_content_assets").insert({
       weekly_content_id: weekId,
+      folder_id: folderId,
       link_url: newAssetLink.trim(),
       file_name: newAssetName.trim() || newAssetLink.trim(),
     });
@@ -184,7 +239,7 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const handleWeekAssetUpload = async (weekId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAssetUpload = async (folderId: string, weekId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploadingAsset(true);
@@ -198,6 +253,7 @@ export default function CourseDetail() {
     const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
     await supabase.from("weekly_content_assets").insert({
       weekly_content_id: weekId,
+      folder_id: folderId,
       file_url: urlData.publicUrl,
       file_name: file.name,
     });
@@ -205,7 +261,7 @@ export default function CourseDetail() {
     loadCourse();
   };
 
-  const deleteWeekAsset = async (assetId: string) => {
+  const deleteAsset = async (assetId: string) => {
     await supabase.from("weekly_content_assets").delete().eq("id", assetId);
     loadCourse();
   };
@@ -323,35 +379,84 @@ export default function CourseDetail() {
                   </div>
 
                   {expandedWeek === w.id && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Materials</p>
-                      {(weekAssets[w.id] || []).map((asset) => (
-                        <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
-                          <div className="flex items-center gap-2">
-                            {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-                            <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
-                              {asset.file_name || asset.link_url}
-                            </a>
+                    <div className="mt-4 space-y-4 border-t pt-4">
+                      {/* Folders */}
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Folders</p>
+                      {(weekFolders[w.id] || []).map((folder) => (
+                        <div key={folder.id} className="rounded-lg border">
+                          <div className="flex items-center justify-between p-3">
+                            <button className="flex items-center gap-2 text-left" onClick={() => setExpandedFolder(expandedFolder === folder.id ? null : folder.id)}>
+                              {expandedFolder === folder.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              <Folder className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">{folder.name}</span>
+                              <Badge variant="outline" className="text-xs">{(folderAssets[folder.id] || []).length}</Badge>
+                            </button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteFolder(folder.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteWeekAsset(asset.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+
+                          {expandedFolder === folder.id && (
+                            <div className="space-y-2 border-t px-3 pb-3 pt-2">
+                              {(folderAssets[folder.id] || []).map((asset) => (
+                                <div key={asset.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                                  <div className="flex items-center gap-2">
+                                    {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                                    <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                                      {asset.file_name || asset.link_url}
+                                    </a>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAsset(asset.id)}>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <div className="flex gap-2">
+                                <Input placeholder="Link name" value={newAssetName} onChange={(e) => setNewAssetName(e.target.value)} className="flex-1" />
+                                <Input placeholder="https://..." value={newAssetLink} onChange={(e) => setNewAssetLink(e.target.value)} className="flex-1" />
+                                <Button size="sm" variant="outline" onClick={() => addAssetLink(folder.id, w.id)} disabled={!newAssetLink.trim()}>
+                                  <LinkIcon className="mr-1 h-3 w-3" /> Add
+                                </Button>
+                              </div>
+                              <div>
+                                <Label htmlFor={`folder-upload-${folder.id}`} className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                                  <Upload className="h-3 w-3" /> {uploadingAsset ? "Uploading..." : "Upload File"}
+                                </Label>
+                                <input id={`folder-upload-${folder.id}`} type="file" className="hidden" onChange={(e) => handleAssetUpload(folder.id, w.id, e)} disabled={uploadingAsset} />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
 
+                      {/* Add folder */}
                       <div className="flex gap-2">
-                        <Input placeholder="Link name" value={newAssetName} onChange={(e) => setNewAssetName(e.target.value)} className="flex-1" />
-                        <Input placeholder="https://..." value={newAssetLink} onChange={(e) => setNewAssetLink(e.target.value)} className="flex-1" />
-                        <Button size="sm" variant="outline" onClick={() => addWeekAssetLink(w.id)} disabled={!newAssetLink.trim()}>
-                          <LinkIcon className="mr-1 h-3 w-3" /> Add Link
+                        <Input placeholder="New folder name" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} className="flex-1" />
+                        <Button size="sm" variant="outline" onClick={() => addFolder(w.id)} disabled={!newFolderName.trim()}>
+                          <FolderPlus className="mr-1 h-3 w-3" /> Add Folder
                         </Button>
                       </div>
-                      <div>
-                        <Label htmlFor={`week-upload-${w.id}`} className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
-                          <Upload className="h-3 w-3" /> {uploadingAsset ? "Uploading..." : "Upload File (PDF, PPT, etc.)"}
-                        </Label>
-                        <input id={`week-upload-${w.id}`} type="file" className="hidden" onChange={(e) => handleWeekAssetUpload(w.id, e)} disabled={uploadingAsset} />
-                      </div>
+
+                      {/* Loose materials (no folder) */}
+                      {(weekAssets[w.id] || []).length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Ungrouped Materials</p>
+                          {(weekAssets[w.id] || []).map((asset) => (
+                            <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
+                              <div className="flex items-center gap-2">
+                                {asset.file_url ? <FileText className="h-3 w-3 text-muted-foreground" /> : <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                                <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+                                  {asset.file_name || asset.link_url}
+                                </a>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAsset(asset.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
