@@ -281,6 +281,20 @@ export default function CourseDetail() {
     loadCourse();
   };
 
+  const deleteAssignment = async (aId: string) => {
+    if (!confirm("Delete this assignment and all its submissions?")) return;
+    await supabase.from("assignments").delete().eq("id", aId);
+    loadCourse();
+    toast({ title: "Assignment deleted" });
+  };
+
+  const deleteWeek = async (weekId: string) => {
+    if (!confirm("Delete this week and all its folders/materials?")) return;
+    await supabase.from("weekly_content").delete().eq("id", weekId);
+    loadCourse();
+    toast({ title: "Week deleted" });
+  };
+
   const gradeSubmission = async (subId: string, grade: number, feedback: string) => {
     await supabase.from("assignment_submissions").update({ grade, feedback, graded_at: new Date().toISOString() }).eq("id", subId);
     loadCourse();
@@ -375,6 +389,9 @@ export default function CourseDetail() {
                         {w.is_published ? "Published" : "Draft"}
                       </Badge>
                       <Switch checked={w.is_published} onCheckedChange={() => toggleWeekPublish(w.id, w.is_published)} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteWeek(w.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
 
@@ -500,6 +517,9 @@ export default function CourseDetail() {
                       <Badge variant="outline" className="text-xs">{(submissions[a.id] || []).length} submissions</Badge>
                       <Badge variant={a.is_published ? "default" : "secondary"}>{a.is_published ? "Published" : "Draft"}</Badge>
                       <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteAssignment(a.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
 
