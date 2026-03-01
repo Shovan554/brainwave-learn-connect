@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,6 +57,10 @@ export function FloatingAICopilot() {
     let assistantSoFar = "";
 
     try {
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const userToken = session?.access_token || "";
+
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-copilot`, {
         method: "POST",
         headers: {
@@ -66,6 +71,7 @@ export function FloatingAICopilot() {
           messages: [...messages, userMsg],
           courseId: courseId || "",
           action: mode,
+          userToken,
         }),
       });
 
