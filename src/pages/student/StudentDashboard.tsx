@@ -147,7 +147,7 @@ export default function StudentDashboard() {
       ) : (
         <div className="mb-8 space-y-2">
           {assignments.slice(0, 5).map((a, i) => (
-            <Card key={a.id} className={i === 0 ? "border-primary/30 bg-primary/5" : ""}>
+            <Card key={a.id} className={`transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${i === 0 ? "border-primary/30 bg-primary/5" : ""}`}>
               <CardContent className="flex items-center justify-between p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -183,15 +183,15 @@ export default function StudentDashboard() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((c: any) => (
-            <Card key={c.id} className="transition-shadow hover:shadow-md">
+            <Card key={c.id} className="transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group cursor-pointer">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{c.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">{c.term}</p>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" size="sm" asChild className="w-full">
+                <Button variant="outline" size="sm" asChild className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
                   <Link to={`/student/courses/${c.id}`}>
-                    View Course <ArrowRight className="ml-2 h-3 w-3" />
+                    View Course <ArrowRight className="ml-2 h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
                   </Link>
                 </Button>
               </CardContent>
