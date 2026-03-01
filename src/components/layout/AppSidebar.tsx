@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   BookOpen,
@@ -7,12 +9,27 @@ import {
   User,
   LogOut,
   Brain,
-  Film,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function AppSidebar() {
-  const { role, profile, signOut } = useAuth();
+  const { role, profile, user, signOut } = useAuth();
+  const [courses, setCourses] = useState<any[]>([]);
+  const [coursesOpen, setCoursesOpen] = useState(true);
+
+  useEffect(() => {
+    if (!user || role !== "student") return;
+    supabase
+      .from("enrollments")
+      .select("course_id, courses(id, title)")
+      .eq("student_id", user.id)
+      .then(({ data }) => {
+        setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
+      });
+  }, [user, role]);
 
   const teacherLinks = [
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,19 +50,49 @@ export function AppSidebar() {
         <span className="text-lg font-bold tracking-tight">BrainWave</span>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-          >
-            <link.icon className="h-4 w-4" />
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
+      <ScrollArea className="flex-1">
+        <nav className="space-y-1 px-3 py-4">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </NavLink>
+          ))}
+
+          {/* Student courses section */}
+          {role === "student" && courses.length > 0 && (
+            <div className="pt-3">
+              <button
+                onClick={() => setCoursesOpen(!coursesOpen)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
+              >
+                {coursesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                My Courses
+              </button>
+              {coursesOpen && (
+                <div className="mt-1 space-y-0.5">
+                  {courses.map((c: any) => (
+                    <NavLink
+                      key={c.id}
+                      to={`/student/courses/${c.id}`}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span className="truncate">{c.title}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
+      </ScrollArea>
 
       <div className="border-t border-sidebar-border p-4">
         <div className="mb-3 flex items-center gap-3">
@@ -60,7 +107,7 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
           onClick={signOut}
         >
           <LogOut className="h-4 w-4" />
