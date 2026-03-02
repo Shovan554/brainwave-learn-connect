@@ -69,6 +69,11 @@ export default function StudentDashboard() {
       if (assignData) {
         const now = Date.now();
         const prioritized: PrioritizedAssignment[] = assignData
+          .filter((a: any) => {
+            // Only show assignments that are not past due (or have no due date)
+            if (!a.due_date) return true;
+            return new Date(a.due_date).getTime() > now;
+          })
           .map((a: any) => {
             const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
             const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
@@ -161,10 +166,17 @@ export default function StudentDashboard() {
 
       {assignments.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}>
-          <Card className="mb-8 border-dashed">
+      <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
             <CardContent className="flex flex-col items-center py-10 text-center">
-              <Clock className="mb-3 h-10 w-10 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">No upcoming assignments</p>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+              >
+                <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
+              </motion.div>
+              <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
+              <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
             </CardContent>
           </Card>
         </motion.div>
