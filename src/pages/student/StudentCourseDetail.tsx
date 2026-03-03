@@ -18,6 +18,7 @@ import {
   Loader2, FileText, Calendar, Clock, Film, Users, Flag,
   ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
 } from "lucide-react";
+import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
 export default function StudentCourseDetail() {
   const { id } = useParams<{ id: string }>();
