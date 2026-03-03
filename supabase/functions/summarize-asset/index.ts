@@ -31,21 +31,34 @@ serve(async (req) => {
       );
     }
 
-    // Download the file
-    const fileResponse = await fetch(fileUrl);
-    if (!fileResponse.ok) throw new Error(`Failed to download file: ${fileResponse.status}`);
-    const fileBytes = await fileResponse.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileBytes)));
+    const isTextFile = ["txt", "md", "csv"].includes(ext);
 
-    // Determine MIME type
-    let mimeType = "application/octet-stream";
-    if (isPresentation) mimeType = ext === "pptx" ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" : "application/vnd.ms-powerpoint";
-    else if (isPdf) mimeType = "application/pdf";
-    else if (isDoc) mimeType = ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/msword";
-    else if (ext === "txt" || ext === "md" || ext === "csv") mimeType = "text/plain";
+    let userContent: any[];
 
-    // Call AI with the file using image_url format (supports documents in Gemini)
-    const dataUri = `data:${mimeType};base64,${base64}`;
+    if (isTextFile) {
+      // For text files, download and send as text
+      const fileResponse = await fetch(fileUrl);
+      if (!fileResponse.ok) throw new Error(`Failed to download file: ${fileResponse.status}`);
+      const textContent = await fileResponse.text();
+      userContent = [
+        {
+          type: "text",
+          text: `Here is the content of "${fileName || "file"}":\n\n${textContent}\n\nPlease summarize this document and provide key study notes.`,
+        },
+      ];
+    } else {
+      // For binary docs (ppt, pdf, docx), pass the public URL directly
+      userContent = [
+        {
+          type: "image_url",
+          image_url: { url: fileUrl },
+        },
+        {
+          type: "text",
+          text: `Please summarize this ${isPresentation ? "presentation" : "document"} ("${fileName || "file"}") and provide key study notes.`,
+        },
+      ];
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -67,16 +80,7 @@ Format your response in clean Markdown. Be thorough but concise. Focus on what a
           },
           {
             role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: dataUri },
-              },
-              {
-                type: "text",
-                text: `Please summarize this ${isPresentation ? "presentation" : "document"} ("${fileName || "file"}") and provide key study notes.`,
-              },
-            ],
+            content: userContent,
           },
         ],
       }),
