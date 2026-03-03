@@ -18,6 +18,7 @@ import {
   Loader2, FileText, Calendar, Clock, Film, Users, Flag,
   ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
 } from "lucide-react";
+import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
 export default function StudentCourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -305,11 +306,16 @@ export default function StudentCourseDetail() {
                               {(folderAssets[folder.id] || []).length === 0 ? (
                                 <p className="text-xs text-muted-foreground">No materials yet</p>
                               ) : (folderAssets[folder.id] || []).map((asset) => (
-                                <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
-                                  className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm hover:bg-muted">
-                                  {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
-                                  {asset.file_name || asset.link_url}
-                                </a>
+                                <div key={asset.id} className="flex items-center gap-1">
+                                  <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                                    className="flex flex-1 items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm hover:bg-muted">
+                                    {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                                    {asset.file_name || asset.link_url}
+                                  </a>
+                                  {asset.file_url && asset.file_name && (
+                                    <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} />
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}
@@ -321,11 +327,16 @@ export default function StudentCourseDetail() {
                         <div className="space-y-1">
                           <p className="text-xs font-semibold uppercase text-muted-foreground">Other Materials</p>
                           {(weekAssets[w.id] || []).map((asset) => (
-                            <a key={asset.id} href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
-                              {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
-                              {asset.file_name || asset.link_url}
-                            </a>
+                            <div key={asset.id} className="flex items-center gap-1">
+                              <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer"
+                                className="flex flex-1 items-center gap-2 rounded-lg border p-2 text-sm hover:bg-muted">
+                                {asset.file_url ? <FileText className="h-3 w-3 text-primary" /> : <ExternalLink className="h-3 w-3 text-primary" />}
+                                {asset.file_name || asset.link_url}
+                              </a>
+                              {asset.file_url && asset.file_name && (
+                                <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} />
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
