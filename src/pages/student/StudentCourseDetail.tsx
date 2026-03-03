@@ -313,7 +313,7 @@ export default function StudentCourseDetail() {
                                     {asset.file_name || asset.link_url}
                                   </a>
                                   {asset.file_url && asset.file_name && (
-                                    <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} />
+                                    <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} courseId={id} courseTitle={course?.title} />
                                   )}
                                 </div>
                               ))}
@@ -334,7 +334,7 @@ export default function StudentCourseDetail() {
                                 {asset.file_name || asset.link_url}
                               </a>
                               {asset.file_url && asset.file_name && (
-                                <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} />
+                                <AssetSummaryDialog fileUrl={asset.file_url} fileName={asset.file_name} courseId={id} courseTitle={course?.title} />
                               )}
                             </div>
                           ))}
