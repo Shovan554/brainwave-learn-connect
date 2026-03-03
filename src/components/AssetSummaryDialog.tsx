@@ -8,7 +8,6 @@ import ReactMarkdown from "react-markdown";
 interface AssetSummaryDialogProps {
   fileUrl: string;
   fileName: string;
-  children: React.ReactNode;
 }
 
 export function AssetSummaryDialog({ fileUrl, fileName, children }: AssetSummaryDialogProps) {
