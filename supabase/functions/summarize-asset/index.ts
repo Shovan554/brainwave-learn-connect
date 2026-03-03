@@ -44,7 +44,9 @@ serve(async (req) => {
     else if (isDoc) mimeType = ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/msword";
     else if (ext === "txt" || ext === "md" || ext === "csv") mimeType = "text/plain";
 
-    // Call AI with the file
+    // Call AI with the file using image_url format (supports documents in Gemini)
+    const dataUri = `data:${mimeType};base64,${base64}`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -67,11 +69,8 @@ Format your response in clean Markdown. Be thorough but concise. Focus on what a
             role: "user",
             content: [
               {
-                type: "file",
-                file: {
-                  filename: fileName || "document",
-                  file_data: `data:${mimeType};base64,${base64}`,
-                },
+                type: "image_url",
+                image_url: { url: dataUri },
               },
               {
                 type: "text",
