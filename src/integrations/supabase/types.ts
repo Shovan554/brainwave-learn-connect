@@ -385,6 +385,39 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_summaries: {
+        Row: {
+          course_id: string
+          course_title: string
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          student_id: string
+          summary: string
+        }
+        Insert: {
+          course_id: string
+          course_title?: string
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          student_id: string
+          summary: string
+        }
+        Update: {
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          student_id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
