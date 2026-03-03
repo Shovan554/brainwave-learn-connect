@@ -1,23 +1,31 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Brain } from "lucide-react";
+import { Loader2, Brain, BookmarkPlus, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 
 interface AssetSummaryDialogProps {
   fileUrl: string;
   fileName: string;
+  courseId?: string;
+  courseTitle?: string;
 }
 
-export function AssetSummaryDialog({ fileUrl, fileName }: AssetSummaryDialogProps) {
+export function AssetSummaryDialog({ fileUrl, fileName, courseId, courseTitle }: AssetSummaryDialogProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const loadSummary = async () => {
-    if (summary) return; // already loaded
+    if (summary) return;
     setLoading(true);
     setError(null);
     try {
@@ -31,6 +39,36 @@ export function AssetSummaryDialog({ fileUrl, fileName }: AssetSummaryDialogProp
       setError(e.message || "Failed to generate summary");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveToReadings = async () => {
+    if (!user || !summary || !courseId) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("saved_summaries").insert({
+        student_id: user.id,
+        course_id: courseId,
+        course_title: courseTitle || "",
+        file_name: fileName,
+        file_url: fileUrl,
+        summary,
+      });
+      if (error) {
+        if (error.message.includes("duplicate")) {
+          toast({ title: "Already saved", description: "This summary is already in your readings." });
+          setSaved(true);
+        } else {
+          throw error;
+        }
+      } else {
+        setSaved(true);
+        toast({ title: "Saved to My Readings!" });
+      }
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -76,9 +114,31 @@ export function AssetSummaryDialog({ fileUrl, fileName }: AssetSummaryDialogProp
           </div>
         )}
         {summary && (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{summary}</ReactMarkdown>
-          </div>
+          <>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>{summary}</ReactMarkdown>
+            </div>
+            {courseId && (
+              <div className="flex justify-end border-t pt-3">
+                <Button
+                  variant={saved ? "secondary" : "default"}
+                  size="sm"
+                  className="gap-2"
+                  onClick={saveToReadings}
+                  disabled={saving || saved}
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : saved ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <BookmarkPlus className="h-4 w-4" />
+                  )}
+                  {saved ? "Saved" : "Save to My Readings"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
