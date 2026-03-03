@@ -10,7 +10,7 @@ interface AssetSummaryDialogProps {
   fileName: string;
 }
 
-export function AssetSummaryDialog({ fileUrl, fileName, children }: AssetSummaryDialogProps) {
+export function AssetSummaryDialog({ fileUrl, fileName }: AssetSummaryDialogProps) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
