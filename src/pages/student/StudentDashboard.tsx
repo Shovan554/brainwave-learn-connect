@@ -165,58 +165,41 @@ export default function StudentDashboard() {
       </motion.div>
 
       {assignments.length === 0 ? (
-        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}>
-      <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
-            <CardContent className="flex flex-col items-center py-10 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-              >
-                <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
-              </motion.div>
-              <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
-              <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
+          <CardContent className="flex flex-col items-center py-10 text-center">
+            <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
+            <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
+            <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
+          </CardContent>
+        </Card>
       ) : (
-        <motion.div
-          className="mb-8 space-y-2"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-        >
+        <div className="mb-8 space-y-2">
           {assignments.slice(0, 5).map((a, i) => (
-            <motion.div key={a.id} variants={itemVariants}>
-              <Card className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${i === 0 ? "border-primary/40 bg-gradient-to-r from-primary/5 to-transparent" : "hover:border-primary/20"}`}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {i === 0 && (
-                        <Badge className="bg-primary text-primary-foreground text-xs gap-1">
-                          <Sparkles className="h-3 w-3" /> Top Priority
-                        </Badge>
-                      )}
-                      <Badge variant={urgencyColor(a) as any} className="text-xs">
-                        {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"}
+            <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${i === 0 ? "border-primary/40 bg-gradient-to-r from-primary/5 to-transparent" : "hover:border-primary/20"}`}>
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {i === 0 && (
+                      <Badge className="bg-primary text-primary-foreground text-xs gap-1">
+                        <Sparkles className="h-3 w-3" /> Top Priority
                       </Badge>
-                    </div>
-                    <p className="mt-1.5 font-medium">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                    )}
+                    <Badge variant={urgencyColor(a) as any} className="text-xs">
+                      {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"}
+                    </Badge>
                   </div>
-                  <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400 }}>
-                    <Button variant="ghost" size="sm" asChild className="rounded-xl">
-                      <Link to={`/student/courses/${a.course_id}`}>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <p className="mt-1.5 font-medium">{a.title}</p>
+                  <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                </div>
+                <Button variant="ghost" size="sm" asChild className="rounded-xl">
+                  <Link to={`/student/courses/${a.course_id}`}>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* Courses */}
