@@ -203,52 +203,38 @@ export default function StudentDashboard() {
       )}
 
       {/* Courses */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-        <div className="mb-3 flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">My Courses</h2>
-        </div>
-      </motion.div>
+      <div className="mb-3 flex items-center gap-2">
+        <GraduationCap className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">My Courses</h2>
+      </div>
 
       {courses.length === 0 ? (
-        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.25 }}>
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center py-10 text-center">
-              <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/30" />
-              <p className="mb-2 text-sm text-muted-foreground">No courses yet</p>
-              <p className="text-xs text-muted-foreground">Join a course using an invite code from your teacher</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center py-10 text-center">
+            <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="mb-2 text-sm text-muted-foreground">No courses yet</p>
+            <p className="text-xs text-muted-foreground">Join a course using an invite code from your teacher</p>
+          </CardContent>
+        </Card>
       ) : (
-        <motion.div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-        >
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((c: any) => (
-            <motion.div key={c.id} variants={itemVariants}>
-              <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-transparent hover:border-primary/20">
-                {/* Top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{c.title}</CardTitle>
-                  <p className="text-xs text-muted-foreground">{c.term}</p>
-                </CardHeader>
-                <CardContent>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button variant="outline" size="sm" asChild className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
-                      <Link to={`/student/courses/${c.id}`}>
-                        View Course <ArrowRight className="ml-2 h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card key={c.id} className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-transparent hover:border-primary/20">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{c.title}</CardTitle>
+                <p className="text-xs text-muted-foreground">{c.term}</p>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm" asChild className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
+                  <Link to={`/student/courses/${c.id}`}>
+                    View Course <ArrowRight className="ml-2 h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           ))}
-        </motion.div>
+        </div>
       )}
     </DashboardLayout>
   );
