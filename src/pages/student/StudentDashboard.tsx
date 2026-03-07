@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles, GraduationCap } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface PrioritizedAssignment {
   id: string;
@@ -23,15 +22,6 @@ interface PrioritizedAssignment {
   estimated_time_minutes: number;
   priority_score: number;
 }
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
-};
 
 export default function StudentDashboard() {
   const { user } = useAuth();
