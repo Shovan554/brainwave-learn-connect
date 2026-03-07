@@ -124,22 +124,16 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 flex items-center justify-between"
-      >
+      <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Dashboard</h1>
           <p className="text-muted-foreground">Your assignments and courses</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="gap-2 rounded-xl">
-                <Plus className="h-4 w-4" /> Join Course
-              </Button>
-            </motion.div>
+            <Button className="gap-2 rounded-xl">
+              <Plus className="h-4 w-4" /> Join Course
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -154,15 +148,13 @@ export default function StudentDashboard() {
             </div>
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
 
       {/* Priority Queue */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">What To Do Next</h2>
-        </div>
-      </motion.div>
+      <div className="mb-3 flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">What To Do Next</h2>
+      </div>
 
       {assignments.length === 0 ? (
         <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
