@@ -21,14 +21,25 @@ export function AppSidebar() {
   const [coursesOpen, setCoursesOpen] = useState(true);
 
   useEffect(() => {
-    if (!user || role !== "student") return;
-    supabase
-      .from("enrollments")
-      .select("course_id, courses(id, title)")
-      .eq("student_id", user.id)
-      .then(({ data }) => {
-        setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
-      });
+    if (!user) return;
+    if (role === "student") {
+      supabase
+        .from("enrollments")
+        .select("course_id, courses(id, title)")
+        .eq("student_id", user.id)
+        .then(({ data }) => {
+          setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
+        });
+    } else if (role === "teacher") {
+      supabase
+        .from("courses")
+        .select("id, title")
+        .eq("teacher_id", user.id)
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          setCourses(data || []);
+        });
+    }
   }, [user, role]);
 
   const teacherLinks = [
@@ -65,22 +76,22 @@ export function AppSidebar() {
             </NavLink>
           ))}
 
-          {/* Student courses section */}
-          {role === "student" && courses.length > 0 && (
+          {/* Courses section for both roles */}
+          {courses.length > 0 && (
             <div className="pt-3">
               <button
                 onClick={() => setCoursesOpen(!coursesOpen)}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
               >
                 {coursesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                My Courses
+                {role === "teacher" ? "My Courses" : "My Courses"}
               </button>
               {coursesOpen && (
                 <div className="mt-1 space-y-0.5">
                   {courses.map((c: any) => (
                     <NavLink
                       key={c.id}
-                      to={`/student/courses/${c.id}`}
+                      to={role === "teacher" ? `/teacher/courses/${c.id}` : `/student/courses/${c.id}`}
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                     >
