@@ -10,7 +10,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <main className="ml-64 min-h-screen relative">
         {/* Subtle educational background pattern */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          className="pointer-events-none absolute inset-0 z-0 opacity-[0.035]"
           style={{
             backgroundImage:
               role === "teacher"
