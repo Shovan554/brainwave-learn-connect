@@ -137,6 +137,55 @@ export default function TeacherDashboard() {
         </Card>
       </div>
 
+      {/* Pending Grading Section */}
+      {ungradedSubs.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5 text-destructive" />
+            <h2 className="text-lg font-semibold">Needs Your Attention</h2>
+            <Badge variant="destructive" className="ml-1">{ungradedSubs.length} ungraded</Badge>
+          </div>
+          <div className="space-y-2">
+            {ungradedSubs.slice(0, 8).map((sub) => {
+              const daysAgo = Math.floor((Date.now() - new Date(sub.submitted_at).getTime()) / (1000 * 60 * 60 * 24));
+              return (
+                <Card key={sub.id} className="transition-shadow hover:shadow-md">
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10">
+                        <ClipboardCheck className="h-4 w-4 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{sub.student_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {sub.assignment_title} · {sub.course_title}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`}
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/teacher/courses/${sub.course_id}`}>
+                          Grade <ArrowRight className="ml-1 h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {ungradedSubs.length > 8 && (
+              <p className="text-center text-sm text-muted-foreground">
+                +{ungradedSubs.length - 8} more submissions awaiting grading
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <h2 className="mb-4 text-lg font-semibold">Your Courses</h2>
       {courses.length === 0 ? (
         <Card>
