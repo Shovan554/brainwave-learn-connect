@@ -16,6 +16,8 @@ import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
 import PublicProfile from "./pages/student/PublicProfile";
+import Messages from "./pages/Messages";
+import Reels from "./pages/Reels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
