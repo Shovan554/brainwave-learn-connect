@@ -544,30 +544,28 @@ export default function CourseDetail() {
 
         {/* Students Tab */}
         <TabsContent value="students">
-          <Card>
-            <CardContent className="p-4">
-              {students.length === 0 ? (
+          {students.length === 0 ? (
+            <Card>
+              <CardContent className="p-4">
                 <div className="flex flex-col items-center py-8 text-center">
                   <Users className="mb-3 h-10 w-10 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">No students enrolled yet. Share the invite code: <strong>{course.invite_code}</strong></p>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {students.map((s: any) => (
-                    <div key={s.student_id} className="flex items-center gap-3 rounded-lg border p-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        {(s.profiles?.name || "?").charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{s.profiles?.name || "Unknown"}</p>
-                        <p className="text-xs text-muted-foreground">{s.profiles?.major || "No major"}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {students.map((s: any) => (
+                <StudentFeedbackCard
+                  key={s.student_id}
+                  student={s}
+                  courseId={id!}
+                  assignments={assignments}
+                  submissions={submissions}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* AI Tab */}
