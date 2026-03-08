@@ -17,6 +17,7 @@ import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
   Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder,
 } from "lucide-react";
+import { StudentFeedbackCard } from "@/components/StudentFeedbackCard";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
