@@ -174,7 +174,7 @@ export default function StudentDashboard() {
                   <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
                 </div>
                 <Button variant="ghost" size="sm" asChild className="rounded-xl">
-                  <Link to={`/student/courses/${a.course_id}`}>
+                  <Link to={`/student/courses/${a.course_id}?tab=assignments`}>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
