@@ -454,28 +454,6 @@ export default function StudentCourseDetail() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Students */}
-        <TabsContent value="students">
-          <div className="space-y-2">
-            {students.map((s: any) => (
-              <Card key={s.student_id}>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                    {(s.profiles?.name || "?").charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{s.profiles?.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.profiles?.major || "No major"}</p>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/students/${s.profiles?.user_id}/profile`}>View Profile</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
       </Tabs>
     </DashboardLayout>
   );
