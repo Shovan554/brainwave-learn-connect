@@ -21,8 +21,11 @@ import {
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
 export default function StudentCourseDetail() {
+  const [searchParams] = useSearchParams();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
   const { toast } = useToast();
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -223,7 +226,7 @@ export default function StudentCourseDetail() {
         <p className="text-muted-foreground">{course.term} {course.description && `— ${course.description}`}</p>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
