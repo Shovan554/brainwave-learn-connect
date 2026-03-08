@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -21,9 +21,11 @@ import {
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
 export default function StudentCourseDetail() {
+  const [searchParams] = useSearchParams();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [syllabusFiles, setSyllabusFiles] = useState<any[]>([]);
@@ -223,7 +225,7 @@ export default function StudentCourseDetail() {
         <p className="text-muted-foreground">{course.term} {course.description && `— ${course.description}`}</p>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
