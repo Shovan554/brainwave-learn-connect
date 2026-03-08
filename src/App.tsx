@@ -53,6 +53,10 @@ const App = () => (
             <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
             <Route path="/students/:studentId/profile" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
+            {/* Shared routes */}
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/reels" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FloatingAICopilot />
