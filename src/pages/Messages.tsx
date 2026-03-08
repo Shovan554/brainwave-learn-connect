@@ -1,0 +1,416 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Send, Paperclip, Plus, Search, Image, FileText, X } from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+
+interface Conversation {
+  id: string;
+  updated_at: string;
+  participants: { user_id: string; name: string }[];
+  lastMessage?: string;
+}
+
+interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  attachments?: { id: string; file_url: string; file_name: string; file_type: string }[];
+}
+
+export default function Messages() {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchUsers, setSearchUsers] = useState("");
+  const [foundUsers, setFoundUsers] = useState<any[]>([]);
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadConversations = useCallback(async () => {
+    if (!user) return;
+    const { data: participations } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (!participations?.length) return;
+
+    const convoIds = participations.map((p: any) => p.conversation_id);
+    const { data: convos } = await supabase
+      .from("conversations")
+      .select("id, updated_at")
+      .in("id", convoIds)
+      .order("updated_at", { ascending: false });
+
+    if (!convos) return;
+
+    // Get all participants for these convos
+    const { data: allParticipants } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id, user_id")
+      .in("conversation_id", convoIds);
+
+    // Get profiles
+    const userIds = [...new Set(allParticipants?.map((p: any) => p.user_id) || [])];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name")
+      .in("user_id", userIds);
+
+    const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
+
+    // Get last message for each conversation
+    const convoList: Conversation[] = await Promise.all(
+      convos.map(async (c: any) => {
+        const parts = allParticipants
+          ?.filter((p: any) => p.conversation_id === c.id && p.user_id !== user.id)
+          .map((p: any) => ({ user_id: p.user_id, name: profileMap[p.user_id] || "User" })) || [];
+
+        const { data: lastMsg } = await supabase
+          .from("messages")
+          .select("content")
+          .eq("conversation_id", c.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        return {
+          id: c.id,
+          updated_at: c.updated_at,
+          participants: parts,
+          lastMessage: lastMsg?.[0]?.content || "",
+        };
+      })
+    );
+
+    setConversations(convoList);
+  }, [user]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  // Load messages for selected conversation
+  useEffect(() => {
+    if (!selectedConvo) return;
+
+    const loadMessages = async () => {
+      const { data } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", selectedConvo)
+        .order("created_at", { ascending: true });
+
+      if (data) {
+        // Load attachments for each message
+        const msgIds = data.map((m: any) => m.id);
+        const { data: atts } = await supabase
+          .from("message_attachments")
+          .select("*")
+          .in("message_id", msgIds);
+
+        const msgsWithAtts = data.map((m: any) => ({
+          ...m,
+          attachments: atts?.filter((a: any) => a.message_id === m.id) || [],
+        }));
+        setMessages(msgsWithAtts);
+      }
+    };
+
+    loadMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel(`messages-${selectedConvo}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `conversation_id=eq.${selectedConvo}`,
+      }, async (payload) => {
+        const newMsg = payload.new as any;
+        const { data: atts } = await supabase
+          .from("message_attachments")
+          .select("*")
+          .eq("message_id", newMsg.id);
+        setMessages(prev => [...prev, { ...newMsg, attachments: atts || [] }]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedConvo]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const searchForUsers = async (query: string) => {
+    setSearchUsers(query);
+    if (query.length < 2) { setFoundUsers([]); return; }
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, name, major")
+      .ilike("name", `%${query}%`)
+      .neq("user_id", user?.id || "")
+      .limit(10);
+    setFoundUsers(data || []);
+  };
+
+  const startConversation = async (otherUserId: string) => {
+    if (!user) return;
+
+    // Check if conversation already exists
+    const { data: myConvos } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (myConvos) {
+      for (const mc of myConvos) {
+        const { data: otherPart } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", mc.conversation_id)
+          .eq("user_id", otherUserId);
+        if (otherPart?.length) {
+          setSelectedConvo(mc.conversation_id);
+          setNewChatOpen(false);
+          return;
+        }
+      }
+    }
+
+    // Create new conversation
+    const { data: convo, error } = await supabase
+      .from("conversations")
+      .insert({})
+      .select()
+      .single();
+
+    if (error || !convo) { toast.error("Failed to create conversation"); return; }
+
+    // Add both participants
+    await supabase.from("conversation_participants").insert([
+      { conversation_id: convo.id, user_id: user.id },
+      { conversation_id: convo.id, user_id: otherUserId },
+    ]);
+
+    setSelectedConvo(convo.id);
+    setNewChatOpen(false);
+    loadConversations();
+  };
+
+  const sendMessage = async () => {
+    if (!user || !selectedConvo || (!newMessage.trim() && !attachments.length)) return;
+    setSending(true);
+
+    try {
+      const { data: msg, error } = await supabase
+        .from("messages")
+        .insert({ conversation_id: selectedConvo, sender_id: user.id, content: newMessage.trim() })
+        .select()
+        .single();
+
+      if (error || !msg) throw error;
+
+      // Upload attachments
+      for (const file of attachments) {
+        const filePath = `${user.id}/${Date.now()}-${file.name}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("message-attachments")
+          .upload(filePath, file);
+
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage
+            .from("message-attachments")
+            .getPublicUrl(filePath);
+
+          await supabase.from("message_attachments").insert({
+            message_id: msg.id,
+            file_url: urlData.publicUrl,
+            file_name: file.name,
+            file_type: file.type.startsWith("image/") ? "image" : "file",
+          });
+        }
+      }
+
+      // Update conversation timestamp
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", selectedConvo);
+
+      setNewMessage("");
+      setAttachments([]);
+    } catch {
+      toast.error("Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const selectedConvoData = conversations.find(c => c.id === selectedConvo);
+  const otherName = selectedConvoData?.participants?.[0]?.name || "Chat";
+
+  return (
+    <DashboardLayout>
+      <div className="flex h-[calc(100vh-6rem)] rounded-xl border border-border bg-card overflow-hidden">
+        {/* Conversations sidebar */}
+        <div className="w-80 border-r border-border flex flex-col">
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <h2 className="font-semibold text-lg">Messages</h2>
+            <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost"><Plus className="h-5 w-5" /></Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>New Conversation</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search users..." className="pl-9" value={searchUsers} onChange={e => searchForUsers(e.target.value)} />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-1">
+                    {foundUsers.map(u => (
+                      <button
+                        key={u.user_id}
+                        onClick={() => startConversation(u.user_id)}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent text-left transition-colors"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{u.name}</p>
+                          {u.major && <p className="text-xs text-muted-foreground">{u.major}</p>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <ScrollArea className="flex-1">
+            {conversations.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedConvo(c.id)}
+                className={`w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-border/50 ${selectedConvo === c.id ? "bg-accent" : "hover:bg-accent/50"}`}
+              >
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "No messages yet"}</p>
+                </div>
+              </button>
+            ))}
+            {conversations.length === 0 && (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                No conversations yet. Click + to start one!
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* Chat area */}
+        <div className="flex-1 flex flex-col">
+          {selectedConvo ? (
+            <>
+              <div className="p-4 border-b border-border flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">{otherName.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <h3 className="font-semibold">{otherName}</h3>
+              </div>
+
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-3">
+                  {messages.map(msg => {
+                    const isMe = msg.sender_id === user?.id;
+                    return (
+                      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          {msg.content && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
+                          {msg.attachments?.map(att => (
+                            <div key={att.id} className="mt-2">
+                              {att.file_type === "image" ? (
+                                <img src={att.file_url} alt={att.file_name} className="rounded-lg max-w-full max-h-48 object-cover" />
+                              ) : (
+                                <a href={att.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 text-xs underline ${isMe ? "text-primary-foreground/80" : "text-primary"}`}>
+                                  <FileText className="h-3 w-3" /> {att.file_name}
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                          <p className={`text-[10px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                            {format(new Date(msg.created_at), "h:mm a")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Attachment preview */}
+              {attachments.length > 0 && (
+                <div className="px-4 py-2 border-t border-border flex gap-2 flex-wrap">
+                  {attachments.map((f, i) => (
+                    <div key={i} className="flex items-center gap-1 bg-muted rounded-lg px-2 py-1 text-xs">
+                      {f.type.startsWith("image/") ? <Image className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                      <span className="max-w-24 truncate">{f.name}</span>
+                      <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))}><X className="h-3 w-3" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-4 border-t border-border flex gap-2">
+                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={e => {
+                  if (e.target.files) setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+                }} />
+                <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  className="flex-1"
+                />
+                <Button onClick={sendMessage} disabled={sending || (!newMessage.trim() && !attachments.length)} size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Send className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">Select a conversation</p>
+                <p className="text-sm">or start a new one</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

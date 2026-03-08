@@ -16,6 +16,8 @@ import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
 import PublicProfile from "./pages/student/PublicProfile";
+import Messages from "./pages/Messages";
+import Reels from "./pages/Reels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,10 @@ const App = () => (
             <Route path="/student/readings" element={<ProtectedRoute requiredRole="student"><MyReadings /></ProtectedRoute>} />
             <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
             <Route path="/students/:studentId/profile" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
+
+            {/* Shared routes */}
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/reels" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

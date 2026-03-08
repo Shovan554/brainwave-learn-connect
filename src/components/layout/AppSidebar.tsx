@@ -11,6 +11,8 @@ import {
   Brain,
   ChevronDown,
   ChevronRight,
+  MessageCircle,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -45,11 +47,15 @@ export function AppSidebar() {
   const teacherLinks = [
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/teacher/courses/new", label: "New Course", icon: PlusCircle },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+    { to: "/reels", label: "Reels", icon: Film },
   ];
 
   const studentLinks = [
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/student/readings", label: "My Readings", icon: BookOpen },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+    { to: "/reels", label: "Reels", icon: Film },
     { to: "/student/profile", label: "My Profile", icon: User },
   ];
 
