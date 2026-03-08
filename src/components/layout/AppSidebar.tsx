@@ -21,14 +21,25 @@ export function AppSidebar() {
   const [coursesOpen, setCoursesOpen] = useState(true);
 
   useEffect(() => {
-    if (!user || role !== "student") return;
-    supabase
-      .from("enrollments")
-      .select("course_id, courses(id, title)")
-      .eq("student_id", user.id)
-      .then(({ data }) => {
-        setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
-      });
+    if (!user) return;
+    if (role === "student") {
+      supabase
+        .from("enrollments")
+        .select("course_id, courses(id, title)")
+        .eq("student_id", user.id)
+        .then(({ data }) => {
+          setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
+        });
+    } else if (role === "teacher") {
+      supabase
+        .from("courses")
+        .select("id, title")
+        .eq("teacher_id", user.id)
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          setCourses(data || []);
+        });
+    }
   }, [user, role]);
 
   const teacherLinks = [
