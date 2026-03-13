@@ -20,8 +20,10 @@ import {
 import { StudentFeedbackCard } from "@/components/StudentFeedbackCard";
 
 export default function CourseDetail() {
+  const [searchParams] = useSearchParams();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "syllabus");
   const { toast } = useToast();
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
