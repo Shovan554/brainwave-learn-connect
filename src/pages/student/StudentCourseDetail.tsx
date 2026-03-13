@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
-  Loader2, FileText, Calendar, Clock, Film, Users, Flag,
+  Loader2, FileText, Calendar, Clock, Users, Flag,
   ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
 } from "lucide-react";
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
