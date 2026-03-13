@@ -443,16 +443,6 @@ export default function StudentCourseDetail() {
           <AICopilot courseId={id!} mode="student" />
         </TabsContent>
 
-        {/* Reels */}
-        <TabsContent value="reels">
-          <Card>
-            <CardContent className="flex flex-col items-center py-16 text-center">
-              <Film className="mb-4 h-16 w-16 text-muted-foreground/30" />
-              <h3 className="mb-2 text-lg font-semibold">Microlearning Reels</h3>
-              <p className="text-sm text-muted-foreground">Coming soon — bite-sized video lessons for quick learning</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </DashboardLayout>
   );
