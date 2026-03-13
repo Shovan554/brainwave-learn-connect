@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
-  Loader2, FileText, Calendar, Clock, Film, Users, Flag,
+  Loader2, FileText, Calendar, Clock, Users, Flag,
   ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
 } from "lucide-react";
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
@@ -231,7 +231,6 @@ export default function StudentCourseDetail() {
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="ai">AI Copilot</TabsTrigger>
-          <TabsTrigger value="reels">Reels</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -444,16 +443,6 @@ export default function StudentCourseDetail() {
           <AICopilot courseId={id!} mode="student" />
         </TabsContent>
 
-        {/* Reels */}
-        <TabsContent value="reels">
-          <Card>
-            <CardContent className="flex flex-col items-center py-16 text-center">
-              <Film className="mb-4 h-16 w-16 text-muted-foreground/30" />
-              <h3 className="mb-2 text-lg font-semibold">Microlearning Reels</h3>
-              <p className="text-sm text-muted-foreground">Coming soon — bite-sized video lessons for quick learning</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </DashboardLayout>
   );
