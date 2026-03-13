@@ -202,11 +202,13 @@ export default function Messages() {
 
     if (error) { toast.error("Failed to create conversation"); return; }
 
-    // Add both participants
-    await supabase.from("conversation_participants").insert([
-      { conversation_id: convoId, user_id: user.id },
-      { conversation_id: convoId, user_id: otherUserId },
-    ]);
+    // Add self first (satisfies "user_id = auth.uid()" policy)
+    const { error: selfErr } = await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: user.id });
+    if (selfErr) { toast.error("Failed to create conversation"); return; }
+
+    // Now add the other user (satisfies "is_conversation_participant" policy)
+    const { error: otherErr } = await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: otherUserId });
+    if (otherErr) { toast.error("Failed to add participant"); return; }
 
     setSelectedConvo(convoId);
     setNewChatOpen(false);
