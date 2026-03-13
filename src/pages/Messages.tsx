@@ -194,22 +194,21 @@ export default function Messages() {
       }
     }
 
-    // Create new conversation
-    const { data: convo, error } = await supabase
+    // Create new conversation with client-generated ID
+    const convoId = crypto.randomUUID();
+    const { error } = await supabase
       .from("conversations")
-      .insert({})
-      .select()
-      .single();
+      .insert({ id: convoId });
 
-    if (error || !convo) { toast.error("Failed to create conversation"); return; }
+    if (error) { toast.error("Failed to create conversation"); return; }
 
     // Add both participants
     await supabase.from("conversation_participants").insert([
-      { conversation_id: convo.id, user_id: user.id },
-      { conversation_id: convo.id, user_id: otherUserId },
+      { conversation_id: convoId, user_id: user.id },
+      { conversation_id: convoId, user_id: otherUserId },
     ]);
 
-    setSelectedConvo(convo.id);
+    setSelectedConvo(convoId);
     setNewChatOpen(false);
     loadConversations();
   };
