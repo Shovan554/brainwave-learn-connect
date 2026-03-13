@@ -168,7 +168,7 @@ export default function TeacherDashboard() {
                         {daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`}
                       </div>
                       <Button variant="outline" size="sm" asChild>
-                        <Link to={`/teacher/courses/${sub.course_id}`}>
+                        <Link to={`/teacher/courses/${sub.course_id}?tab=assignments`}>
                           Grade <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                       </Button>

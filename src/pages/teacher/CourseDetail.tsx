@@ -329,7 +329,7 @@ export default function CourseDetail() {
         </Button>
       </div>
 
-      <Tabs defaultValue="syllabus">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="syllabus">Syllabus</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
