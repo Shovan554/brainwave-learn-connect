@@ -231,7 +231,6 @@ export default function StudentCourseDetail() {
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="ai">AI Copilot</TabsTrigger>
-          <TabsTrigger value="reels">Reels</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
