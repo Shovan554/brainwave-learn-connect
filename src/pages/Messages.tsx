@@ -69,10 +69,10 @@ export default function Messages() {
     const userIds = [...new Set(allParticipants?.map((p: any) => p.user_id) || [])];
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, name")
+      .select("user_id, name, avatar_url")
       .in("user_id", userIds);
 
-    const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
+    const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, { name: p.name, avatar_url: p.avatar_url }]) || []);
 
     // Get last message for each conversation
     const convoList: Conversation[] = await Promise.all(
