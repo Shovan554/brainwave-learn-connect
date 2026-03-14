@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Heart, Upload, ChevronUp, ChevronDown, Play, Pause, Plus } from "lucide-react";
+import { Heart, Upload, ChevronUp, ChevronDown, Play, Pause, Plus, Film } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -26,7 +26,7 @@ interface Reel {
 }
 
 export default function Reels() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -148,32 +148,33 @@ export default function Reels() {
     <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Reels</h1>
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> Upload Reel</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
-              <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
-              <div>
-                <label className="block text-sm font-medium mb-1">Video File</label>
-                <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+        {role === "teacher" && (
+          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="h-4 w-4" /> Upload Reel</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
+                <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium mb-1">Video File</label>
+                  <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                </div>
+                <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full">
+                  {uploading ? "Uploading..." : "Upload"}
+                </Button>
               </div>
-              <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full">
-                {uploading ? "Uploading..." : "Upload"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {reels.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground">
-          <Upload className="h-16 w-16 mb-4 opacity-30" />
-          <p className="text-lg font-medium">No reels yet</p>
-          <p className="text-sm">Be the first to upload a reel!</p>
+          <Film className="h-16 w-16 mb-4 opacity-30" />
+          <p className="text-lg font-medium">No reels</p>
         </div>
       ) : (
         <div className="flex justify-center">
