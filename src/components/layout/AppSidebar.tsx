@@ -13,12 +13,16 @@ import {
   ChevronRight,
   MessageCircle,
   Film,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function AppSidebar() {
   const { role, profile, user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [courses, setCourses] = useState<any[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(true);
 
@@ -122,6 +126,17 @@ export function AppSidebar() {
             <p className="truncate text-xs text-sidebar-foreground/50 capitalize">{role}</p>
           </div>
         </div>
+        {role === "teacher" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200 mb-1"
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
