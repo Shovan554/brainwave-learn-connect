@@ -312,6 +312,7 @@ export default function Messages() {
                 className={`w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-border/50 ${selectedConvo === c.id ? "bg-accent" : "hover:bg-accent/50"}`}
               >
                 <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
