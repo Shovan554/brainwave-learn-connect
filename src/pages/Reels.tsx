@@ -26,7 +26,7 @@ interface Reel {
 }
 
 export default function Reels() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
