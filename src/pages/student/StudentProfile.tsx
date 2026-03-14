@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -8,16 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, Save } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Save, Camera } from "lucide-react";
 
 export default function StudentProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState({ name: "", bio: "", major: "" });
+  const [profile, setProfile] = useState({ name: "", bio: "", major: "", avatar_url: "" });
   const [projects, setProjects] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [newProject, setNewProject] = useState({ title: "", description: "", github_url: "", tech_stack: "" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -26,16 +29,53 @@ export default function StudentProfile() {
 
   const loadData = async () => {
     const [profileRes, projectsRes] = await Promise.all([
-      supabase.from("profiles").select("name, bio, major").eq("user_id", user!.id).single(),
+      supabase.from("profiles").select("name, bio, major, avatar_url").eq("user_id", user!.id).single(),
       supabase.from("project_portfolios").select("*").eq("student_id", user!.id).order("created_at", { ascending: false }),
     ]);
     if (profileRes.data) setProfile(profileRes.data as any);
     if (projectsRes.data) setProjects(projectsRes.data);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please select an image file", variant: "destructive" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const filePath = `${user.id}/${Date.now()}-${file.name}`;
+      const { error: uploadErr } = await supabase.storage.from("avatars").upload(filePath, file);
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = urlData.publicUrl;
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user.id);
+      if (updateErr) throw updateErr;
+
+      setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
+      toast({ title: "Profile photo updated!" });
+    } catch {
+      toast({ title: "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const saveProfile = async () => {
     setSaving(true);
-    const { error } = await supabase.from("profiles").update(profile).eq("user_id", user!.id);
+    const { error } = await supabase.from("profiles").update({
+      name: profile.name,
+      bio: profile.bio,
+      major: profile.major,
+    }).eq("user_id", user!.id);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else toast({ title: "Profile saved" });
     setSaving(false);
@@ -68,6 +108,39 @@ export default function StudentProfile() {
         <Card>
           <CardHeader><CardTitle className="text-base">Profile Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.name} />
+                  <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                    {profile.name?.charAt(0)?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-5 w-5 text-white" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Profile Photo</p>
+                <p className="text-xs text-muted-foreground">Click to upload a new photo</p>
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Name</Label>

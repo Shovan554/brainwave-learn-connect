@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Send, Paperclip, Plus, Search, Image, FileText, X } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import { format } from "date-fns";
 interface Conversation {
   id: string;
   updated_at: string;
-  participants: { user_id: string; name: string }[];
+  participants: { user_id: string; name: string; avatar_url?: string }[];
   lastMessage?: string;
 }
 
@@ -69,17 +69,17 @@ export default function Messages() {
     const userIds = [...new Set(allParticipants?.map((p: any) => p.user_id) || [])];
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, name")
+      .select("user_id, name, avatar_url")
       .in("user_id", userIds);
 
-    const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
+    const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, { name: p.name, avatar_url: p.avatar_url }]) || []);
 
     // Get last message for each conversation
     const convoList: Conversation[] = await Promise.all(
       convos.map(async (c: any) => {
         const parts = allParticipants
           ?.filter((p: any) => p.conversation_id === c.id && p.user_id !== user.id)
-          .map((p: any) => ({ user_id: p.user_id, name: profileMap[p.user_id] || "User" })) || [];
+          .map((p: any) => ({ user_id: p.user_id, name: profileMap[p.user_id]?.name || "User", avatar_url: profileMap[p.user_id]?.avatar_url })) || [];
 
         const { data: lastMsg } = await supabase
           .from("messages")
@@ -263,6 +263,7 @@ export default function Messages() {
 
   const selectedConvoData = conversations.find(c => c.id === selectedConvo);
   const otherName = selectedConvoData?.participants?.[0]?.name || "Chat";
+  const otherAvatar = selectedConvoData?.participants?.[0]?.avatar_url;
 
   return (
     <DashboardLayout>
@@ -312,6 +313,7 @@ export default function Messages() {
                 className={`w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-border/50 ${selectedConvo === c.id ? "bg-accent" : "hover:bg-accent/50"}`}
               >
                 <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
@@ -334,6 +336,7 @@ export default function Messages() {
             <>
               <div className="p-4 border-b border-border flex items-center gap-3">
                 <Avatar className="h-9 w-9">
+                  <AvatarImage src={otherAvatar || undefined} alt={otherName} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm">{otherName.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <h3 className="font-semibold">{otherName}</h3>
