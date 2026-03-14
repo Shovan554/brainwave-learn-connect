@@ -63,6 +63,7 @@ const App = () => (
           </Routes>
           <FloatingAICopilot />
         </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
