@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Heart, Upload, ChevronUp, ChevronDown, Play, Pause, Plus } from "lucide-react";
+import { Heart, Upload, ChevronUp, ChevronDown, Play, Pause, Plus, Film } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
