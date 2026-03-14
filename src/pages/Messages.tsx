@@ -336,6 +336,7 @@ export default function Messages() {
             <>
               <div className="p-4 border-b border-border flex items-center gap-3">
                 <Avatar className="h-9 w-9">
+                  <AvatarImage src={otherAvatar || undefined} alt={otherName} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm">{otherName.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <h3 className="font-semibold">{otherName}</h3>
