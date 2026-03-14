@@ -79,7 +79,7 @@ export default function Messages() {
       convos.map(async (c: any) => {
         const parts = allParticipants
           ?.filter((p: any) => p.conversation_id === c.id && p.user_id !== user.id)
-          .map((p: any) => ({ user_id: p.user_id, name: profileMap[p.user_id] || "User" })) || [];
+          .map((p: any) => ({ user_id: p.user_id, name: profileMap[p.user_id]?.name || "User", avatar_url: profileMap[p.user_id]?.avatar_url })) || [];
 
         const { data: lastMsg } = await supabase
           .from("messages")
