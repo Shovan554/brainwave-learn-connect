@@ -13,7 +13,10 @@ import {
   ChevronRight,
   MessageCircle,
   Film,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
