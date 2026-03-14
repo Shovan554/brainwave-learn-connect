@@ -148,25 +148,27 @@ export default function Reels() {
     <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Reels</h1>
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> Upload Reel</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
-              <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
-              <div>
-                <label className="block text-sm font-medium mb-1">Video File</label>
-                <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+        {role === "teacher" && (
+          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="h-4 w-4" /> Upload Reel</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
+                <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium mb-1">Video File</label>
+                  <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                </div>
+                <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full">
+                  {uploading ? "Uploading..." : "Upload"}
+                </Button>
               </div>
-              <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full">
-                {uploading ? "Uploading..." : "Upload"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {reels.length === 0 ? (
