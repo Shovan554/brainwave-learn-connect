@@ -173,9 +173,8 @@ export default function Reels() {
 
       {reels.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground">
-          <Upload className="h-16 w-16 mb-4 opacity-30" />
-          <p className="text-lg font-medium">No reels yet</p>
-          <p className="text-sm">Be the first to upload a reel!</p>
+          <Film className="h-16 w-16 mb-4 opacity-30" />
+          <p className="text-lg font-medium">No reels</p>
         </div>
       ) : (
         <div className="flex justify-center">
