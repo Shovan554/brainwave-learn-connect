@@ -14,7 +14,7 @@ import { format } from "date-fns";
 interface Conversation {
   id: string;
   updated_at: string;
-  participants: { user_id: string; name: string }[];
+  participants: { user_id: string; name: string; avatar_url?: string }[];
   lastMessage?: string;
 }
 
