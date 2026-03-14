@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function AppSidebar() {
   const { role, profile, user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [courses, setCourses] = useState<any[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(true);
 
