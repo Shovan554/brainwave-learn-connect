@@ -52,6 +52,8 @@ export default function CourseDetail() {
   });
   const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
+  const [assignmentAssets, setAssignmentAssets] = useState<Record<string, any[]>>({});
+  const [uploadingAssignmentFile, setUploadingAssignmentFile] = useState(false);
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
