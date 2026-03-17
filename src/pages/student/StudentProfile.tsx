@@ -116,6 +116,61 @@ export default function StudentProfile() {
     toast({ title: "Post deleted" });
   };
 
+  const openComments = async (postId: string) => {
+    setCommentsPostId(postId);
+    setCommentsOpen(true);
+    setLoadingComments(true);
+    const { data } = await supabase
+      .from("post_comments")
+      .select("*")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      const authorIds = [...new Set(data.map((c: any) => c.author_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", authorIds);
+      const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p]) || []);
+      setComments(data.map((c: any) => ({
+        ...c,
+        author_name: profileMap[c.author_id]?.name || "User",
+        author_avatar: profileMap[c.author_id]?.avatar_url || null,
+      })));
+    }
+    setLoadingComments(false);
+  };
+
+  const sendComment = async () => {
+    if (!user || !commentsPostId || !newComment.trim()) return;
+    setSendingComment(true);
+    try {
+      const { data } = await supabase
+        .from("post_comments")
+        .insert({ post_id: commentsPostId, author_id: user.id, content: newComment.trim() })
+        .select()
+        .single();
+      if (data) {
+        setComments(prev => [...prev, { ...data, author_name: profile.name || "You", author_avatar: profile.avatar_url || null }]);
+        setMyPosts(prev => prev.map(p => p.id === commentsPostId ? { ...p, comments_count: p.comments_count + 1 } : p));
+      }
+      setNewComment("");
+    } catch {
+      toast({ title: "Failed to post comment", variant: "destructive" });
+    } finally {
+      setSendingComment(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    await supabase.from("post_comments").delete().eq("id", commentId);
+    setComments(prev => prev.filter(c => c.id !== commentId));
+    if (commentsPostId) {
+      setMyPosts(prev => prev.map(p => p.id === commentsPostId ? { ...p, comments_count: Math.max(0, p.comments_count - 1) } : p));
+    }
+  };
+
   const deleteProject = async (id: string) => {
     await supabase.from("project_portfolios").delete().eq("id", id);
     loadData();
