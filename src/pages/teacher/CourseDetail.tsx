@@ -64,8 +64,8 @@ export default function CourseDetail() {
     loadCourse();
   }, [id, user]);
 
-  const loadCourse = async () => {
-    setLoading(true);
+  const loadCourse = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     const [courseRes, filesRes, weeksRes, assignRes, enrollRes, reportsRes] = await Promise.all([
       supabase.from("courses").select("*").eq("id", id!).single(),
       supabase.from("course_files").select("*").eq("course_id", id!).order("created_at"),
