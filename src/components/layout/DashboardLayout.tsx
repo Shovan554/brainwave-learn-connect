@@ -1,8 +1,8 @@
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
-import studentBg from "@/assets/student-bg.jpg";
 import studentBgLight from "@/assets/student-bg-light.jpg";
+import studentBgDark from "@/assets/student-bg-dark.jpg";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
@@ -14,25 +14,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <main className="ml-64 min-h-screen relative overflow-hidden">
         {/* Educational background pattern */}
         {role === "student" ? (
-          theme === "light" ? (
-            <div
-              className="pointer-events-none absolute inset-0 z-0 opacity-[0.08]"
-              style={{
-                backgroundImage: `url(${studentBgLight})`,
-                backgroundSize: "800px",
-                backgroundRepeat: "repeat",
-              }}
-            />
-          ) : (
-            <div
-              className="pointer-events-none absolute inset-0 z-0 opacity-[0.06]"
-              style={{
-                backgroundImage: `url(${studentBg})`,
-                backgroundSize: "800px",
-                backgroundRepeat: "repeat",
-              }}
-            />
-          )
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              backgroundImage: `url(${theme === "light" ? studentBgLight : studentBgDark})`,
+              backgroundSize: theme === "light" ? "800px" : "cover",
+              backgroundRepeat: theme === "light" ? "repeat" : "no-repeat",
+              backgroundPosition: "center",
+              opacity: theme === "light" ? 0.08 : 0.15,
+            }}
+          />
         ) : (
           <div
             className="pointer-events-none absolute inset-0 z-0"
