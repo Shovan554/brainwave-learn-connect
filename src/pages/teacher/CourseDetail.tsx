@@ -133,12 +133,12 @@ export default function CourseDetail() {
       setAssignments(assignRes.data);
       const assignIds = assignRes.data.map((a: any) => a.id);
       if (assignIds.length > 0) {
+        // Load submissions
         const { data: subs } = await supabase
           .from("assignment_submissions")
           .select("*")
           .in("assignment_id", assignIds);
         if (subs && subs.length > 0) {
-          // Fetch profiles for submission students
           const subStudentIds = [...new Set(subs.map((s: any) => s.student_id))];
           const { data: subProfiles } = await supabase
             .from("profiles")
@@ -155,6 +155,19 @@ export default function CourseDetail() {
             grouped[s.assignment_id].push(enriched);
           }
           setSubmissions(grouped);
+        }
+        // Load assignment assets
+        const { data: aAssets } = await supabase
+          .from("assignment_assets")
+          .select("*")
+          .in("assignment_id", assignIds);
+        if (aAssets) {
+          const groupedAssets: Record<string, any[]> = {};
+          for (const a of aAssets) {
+            if (!groupedAssets[a.assignment_id]) groupedAssets[a.assignment_id] = [];
+            groupedAssets[a.assignment_id].push(a);
+          }
+          setAssignmentAssets(groupedAssets);
         }
       }
     }
