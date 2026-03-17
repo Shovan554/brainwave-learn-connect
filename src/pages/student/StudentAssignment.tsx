@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
 import {
   Loader2, FileText, Calendar, Clock, ArrowLeft,
-  CheckCircle, Upload, Download, ExternalLink,
+  CheckCircle, Upload, Download, ExternalLink, Bot, Send, Sparkles,
 } from "lucide-react";
 
 export default function StudentAssignment() {
