@@ -57,6 +57,7 @@ export function AppSidebar() {
 
   const studentLinks = [
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/student/grades", label: "Grades", icon: GraduationCap },
     { to: "/student/readings", label: "My Readings", icon: BookOpen },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/reels", label: "Reels", icon: Film },
