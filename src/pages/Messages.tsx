@@ -522,6 +522,9 @@ export default function Messages() {
                 <div className="space-y-3">
                   {messages.map(msg => {
                     const isMe = msg.sender_id === user?.id;
+                    const senderName = isGroup && !isMe
+                      ? selectedConvoData?.participants.find(p => p.user_id === msg.sender_id)?.name
+                      : undefined;
                     // Detect reel share messages
                     const reelMatch = msg.content?.match(/🎬 Shared a reel: "(.+?)"\n.*\/reels\?id=([a-f0-9-]+)/);
                     const reelTitle = reelMatch?.[1];
@@ -530,6 +533,9 @@ export default function Messages() {
                     return (
                       <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          {senderName && (
+                            <p className="text-[11px] font-semibold text-primary mb-1">{senderName}</p>
+                          )}
                           {reelId && reelTitle ? (
                             <button
                               onClick={() => navigate(`/reels?id=${reelId}`)}
