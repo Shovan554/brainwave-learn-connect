@@ -548,10 +548,13 @@ export default function Explore() {
                     <div className="flex items-center gap-2.5">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                          {c.name.charAt(0).toUpperCase()}
+                          {c.isGroup ? <Users className="h-3.5 w-3.5" /> : c.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">{c.name}</span>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium block truncate max-w-[180px]">{c.name}</span>
+                        {c.isGroup && <span className="text-[10px] text-muted-foreground">Group</span>}
+                      </div>
                     </div>
                     <Button
                       size="sm"

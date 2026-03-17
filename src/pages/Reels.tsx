@@ -229,15 +229,24 @@ export default function Reels() {
       avatar_url: profileMap[p.user_id]?.avatar_url || undefined,
     }));
 
-    // Deduplicate by user_id (keep first conversation)
-    const seen = new Set<string>();
-    const unique = contacts.filter(c => {
-      if (seen.has(c.user_id)) return false;
-      seen.add(c.user_id);
-      return true;
-    });
+    // Group participants by conversation to show each conversation separately
+    const convoMap = new Map<string, { names: string[]; avatars: (string | undefined)[] }>();
+    for (const p of allParticipants) {
+      const entry = convoMap.get(p.conversation_id) || { names: [], avatars: [] };
+      entry.names.push(profileMap[p.user_id]?.name || "User");
+      entry.avatars.push(profileMap[p.user_id]?.avatar_url || undefined);
+      convoMap.set(p.conversation_id, entry);
+    }
 
-    setShareContacts(unique);
+    const convos: ShareContact[] = Array.from(convoMap.entries()).map(([convoId, { names, avatars }]) => ({
+      conversation_id: convoId,
+      user_id: convoId, // use convo id as key
+      name: names.join(", "),
+      avatar_url: names.length === 1 ? avatars[0] : undefined,
+      isGroup: names.length > 1,
+    }));
+
+    setShareContacts(convos);
   };
 
   const searchShareUsers = async (query: string) => {
