@@ -54,6 +54,8 @@ export default function CourseDetail() {
   const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
   const [assignmentAssets, setAssignmentAssets] = useState<Record<string, any[]>>({});
   const [uploadingAssignmentFile, setUploadingAssignmentFile] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
