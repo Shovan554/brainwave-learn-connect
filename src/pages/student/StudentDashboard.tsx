@@ -318,9 +318,6 @@ export default function StudentDashboard() {
                   const color = cg.percentage !== null
                     ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
                     : "hsl(var(--muted))";
-                  const emoji = cg.percentage !== null
-                    ? pct >= 90 ? "🌟" : pct >= 80 ? "✨" : pct >= 70 ? "👍" : pct >= 60 ? "💪" : "📚"
-                    : "—";
 
                   return (
                     <div
@@ -337,7 +334,7 @@ export default function StudentDashboard() {
                           <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
                             {letter}
                           </span>
-                          <span className="text-sm">{emoji}</span>
+                          
                         </div>
                       </div>
                       <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
