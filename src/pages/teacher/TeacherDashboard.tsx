@@ -26,6 +26,34 @@ export default function TeacherDashboard() {
   const [courses, setCourses] = useState<any[]>([]);
   const [stats, setStats] = useState({ courses: 0, students: 0, reports: 0 });
   const [ungradedSubs, setUngradedSubs] = useState<UngradedSubmission[]>([]);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const analyzeStudents = async () => {
+    if (!user) return;
+    setAnalyzing(true);
+    setAnalysisOpen(true);
+    setAnalysis(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("analyze-students", {
+        body: { userToken: session?.access_token },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        setAnalysisOpen(false);
+      } else {
+        setAnalysis(data?.analysis || "Unable to generate analysis.");
+      }
+    } catch (e) {
+      toast.error("Failed to analyze students");
+      setAnalysisOpen(false);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
