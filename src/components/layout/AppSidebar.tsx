@@ -53,6 +53,7 @@ export function AppSidebar() {
   const teacherLinks = [
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/teacher/courses/new", label: "New Course", icon: PlusCircle },
+    { to: "/explore", label: "Explore", icon: Compass },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/reels", label: "Reels", icon: Film },
   ];
@@ -61,6 +62,7 @@ export function AppSidebar() {
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/student/grades", label: "Grades", icon: GraduationCap },
     { to: "/student/readings", label: "My Readings", icon: BookOpen },
+    { to: "/explore", label: "Explore", icon: Compass },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/reels", label: "Reels", icon: Film },
     { to: "/student/profile", label: "My Profile", icon: User },
