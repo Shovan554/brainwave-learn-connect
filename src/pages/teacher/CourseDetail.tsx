@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
-  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save,
+  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save, CheckCircle,
 } from "lucide-react";
 import { StudentFeedbackCard } from "@/components/StudentFeedbackCard";
 
@@ -637,7 +637,11 @@ export default function CourseDetail() {
                       </div>
                     </button>
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-xs">{(submissions[a.id] || []).length} submissions</Badge>
+                      <Button variant="outline" size="sm" className="text-xs gap-1" asChild>
+                        <Link to={`/teacher/courses/${id}/assignments/${a.id}/grade`}>
+                          {(submissions[a.id] || []).length} submissions
+                        </Link>
+                      </Button>
                       <Badge variant={a.is_published ? "default" : "secondary"}>{a.is_published ? "Published" : "Draft"}</Badge>
                       <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditingAssignment(a)}>
@@ -694,16 +698,13 @@ export default function CourseDetail() {
                         </div>
                       </div>
 
-                      {/* Submissions */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
-                        {(submissions[a.id] || []).length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No submissions yet</p>
-                        ) : (
-                          (submissions[a.id] || []).map((sub) => (
-                            <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
-                          ))
-                        )}
+                      {/* Link to grading page */}
+                      <div>
+                        <Button variant="default" size="sm" asChild className="gap-1">
+                          <Link to={`/teacher/courses/${id}/assignments/${a.id}/grade`}>
+                            <CheckCircle className="h-3 w-3" /> Grade Submissions ({(submissions[a.id] || []).length})
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   )}
