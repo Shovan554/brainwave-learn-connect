@@ -31,6 +31,7 @@ interface ShareContact {
   user_id: string;
   name: string;
   avatar_url?: string;
+  isGroup?: boolean;
 }
 
 export default function Reels() {
