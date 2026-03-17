@@ -288,12 +288,28 @@ export default function CourseDetail() {
   };
 
   const addAssignment = async () => {
-    if (!id) return;
-    const { error } = await supabase.from("assignments").insert({
+    if (!id || !user) return;
+    const { data: created, error } = await supabase.from("assignments").insert({
       course_id: id, ...newAssignment, due_date: newAssignment.due_date || null,
-    });
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }).select().single();
+    if (error || !created) { toast({ title: "Error", description: error?.message, variant: "destructive" }); return; }
+
+    // Upload attached files
+    for (const file of newAssignmentFiles) {
+      const filePath = `${user.id}/${id}/assignments/${created.id}/${Date.now()}_${file.name}`;
+      const { error: uploadErr } = await supabase.storage.from("course-files").upload(filePath, file);
+      if (!uploadErr) {
+        const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+        await supabase.from("assignment_assets").insert({
+          assignment_id: created.id,
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+        });
+      }
+    }
+
     setNewAssignment({ title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30 });
+    setNewAssignmentFiles([]);
     loadCourse();
   };
 
