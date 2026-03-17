@@ -22,6 +22,7 @@ import StudentGrades from "./pages/student/StudentGrades";
 import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
+import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
             {/* Shared routes */}
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/reels" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
+            <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
