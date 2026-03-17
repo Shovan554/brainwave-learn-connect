@@ -56,6 +56,7 @@ export default function CourseDetail() {
   const [uploadingAssignmentFile, setUploadingAssignmentFile] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [newAssignmentFiles, setNewAssignmentFiles] = useState<File[]>([]);
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
