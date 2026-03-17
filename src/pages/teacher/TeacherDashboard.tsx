@@ -262,6 +262,31 @@ export default function TeacherDashboard() {
           ))}
         </div>
       )}
+
+      {/* Analyze Students Dialog */}
+      <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Student Analysis
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {analyzing ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Analyzing all students across your courses...</p>
+              </div>
+            ) : analysis ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none px-1">
+                <ReactMarkdown>{analysis}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">Unable to generate analysis.</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
