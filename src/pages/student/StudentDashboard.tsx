@@ -318,9 +318,6 @@ export default function StudentDashboard() {
                   const color = cg.percentage !== null
                     ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
                     : "hsl(var(--muted))";
-                  const emoji = cg.percentage !== null
-                    ? pct >= 90 ? "🌟" : pct >= 80 ? "✨" : pct >= 70 ? "👍" : pct >= 60 ? "💪" : "📚"
-                    : "—";
 
                   return (
                     <div
