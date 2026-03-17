@@ -334,7 +334,7 @@ export default function StudentDashboard() {
                           <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
                             {letter}
                           </span>
-                          <span className="text-sm">{emoji}</span>
+                          
                         </div>
                       </div>
                       <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
