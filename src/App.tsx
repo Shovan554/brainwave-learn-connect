@@ -16,6 +16,7 @@ import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
+import StudentGrades from "./pages/student/StudentGrades";
 import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/student/dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/courses/:id" element={<ProtectedRoute requiredRole="student"><StudentCourseDetail /></ProtectedRoute>} />
             <Route path="/student/readings" element={<ProtectedRoute requiredRole="student"><MyReadings /></ProtectedRoute>} />
+            <Route path="/student/grades" element={<ProtectedRoute requiredRole="student"><StudentGrades /></ProtectedRoute>} />
             <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
             <Route path="/students/:studentId/profile" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
