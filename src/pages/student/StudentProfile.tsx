@@ -281,25 +281,27 @@ export default function StudentProfile() {
             {myPosts.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">You haven't posted anything yet.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {myPosts.map(post => (
-                  <div key={post.id} className="flex items-start justify-between rounded-xl border p-4 gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
-                      {post.image_url && (
-                        <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                          <ImageIcon className="h-3 w-3" /> Image attached
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <div key={post.id} className="rounded-xl border overflow-hidden">
+                    <div className="p-4">
+                      <p className="text-sm whitespace-pre-wrap">{post.content}</p>
+                    </div>
+                    {post.image_url && (
+                      <img src={post.image_url} alt="Post" className="w-full max-h-[300px] object-cover" />
+                    )}
+                    <div className="flex items-center justify-between px-4 py-2 border-t border-border/50">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Heart className="h-3 w-3" /> {post.likes_count}</span>
-                        <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {post.comments_count}</span>
+                        <button onClick={() => openComments(post.id)} className="flex items-center gap-1 hover:text-primary transition-colors">
+                          <MessageCircle className="h-3 w-3" /> {post.comments_count}
+                        </button>
                         <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                       </div>
+                      <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
                   </div>
                 ))}
               </div>
