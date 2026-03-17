@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Send, Paperclip, Plus, Search, Image, FileText, X } from "lucide-react";
+import { Send, Paperclip, Plus, Search, Image, FileText, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -261,6 +261,26 @@ export default function Messages() {
     }
   };
 
+  const deleteConversation = async (convoId: string) => {
+    if (!confirm("Delete this conversation? This cannot be undone.")) return;
+    // Delete attachments, messages, participants, then conversation
+    const { data: msgs } = await supabase.from("messages").select("id").eq("conversation_id", convoId);
+    if (msgs?.length) {
+      const msgIds = msgs.map((m: any) => m.id);
+      await supabase.from("message_attachments").delete().in("message_id", msgIds);
+    }
+    await supabase.from("messages").delete().eq("conversation_id", convoId);
+    await supabase.from("conversation_participants").delete().eq("conversation_id", convoId);
+    await supabase.from("conversations").delete().eq("id", convoId);
+
+    if (selectedConvo === convoId) {
+      setSelectedConvo(null);
+      setMessages([]);
+    }
+    setConversations(prev => prev.filter(c => c.id !== convoId));
+    toast.success("Conversation deleted");
+  };
+
   const selectedConvoData = conversations.find(c => c.id === selectedConvo);
   const otherName = selectedConvoData?.participants?.[0]?.name || "Chat";
   const otherAvatar = selectedConvoData?.participants?.[0]?.avatar_url;
@@ -307,20 +327,32 @@ export default function Messages() {
 
           <ScrollArea className="flex-1">
             {conversations.map(c => (
-              <button
+              <div
                 key={c.id}
-                onClick={() => setSelectedConvo(c.id)}
-                className={`w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-border/50 ${selectedConvo === c.id ? "bg-accent" : "hover:bg-accent/50"}`}
+                className={`group relative flex items-center gap-3 p-4 text-left transition-colors border-b border-border/50 ${selectedConvo === c.id ? "bg-accent" : "hover:bg-accent/50"}`}
               >
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "No messages yet"}</p>
-                </div>
-              </button>
+                <button
+                  onClick={() => setSelectedConvo(c.id)}
+                  className="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "No messages yet"}</p>
+                  </div>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             ))}
             {conversations.length === 0 && (
               <div className="p-6 text-center text-muted-foreground text-sm">
