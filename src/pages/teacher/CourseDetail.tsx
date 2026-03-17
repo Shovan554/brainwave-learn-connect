@@ -353,6 +353,36 @@ export default function CourseDetail() {
     toast({ title: "Week deleted" });
   };
 
+  const startEditingAssignment = (a: any) => {
+    setEditingAssignment(a.id);
+    setEditForm({
+      title: a.title,
+      description: a.description || "",
+      due_date: a.due_date ? new Date(a.due_date).toISOString().slice(0, 16) : "",
+      points: a.points || 0,
+      weight: a.weight || 0,
+      estimated_time_minutes: a.estimated_time_minutes || 30,
+    });
+  };
+
+  const saveAssignmentEdit = async (aId: string) => {
+    const { error } = await supabase.from("assignments").update({
+      title: editForm.title,
+      description: editForm.description,
+      due_date: editForm.due_date || null,
+      points: editForm.points,
+      weight: editForm.weight,
+      estimated_time_minutes: editForm.estimated_time_minutes,
+    }).eq("id", aId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setEditingAssignment(null);
+    loadCourse();
+    toast({ title: "Assignment updated" });
+  };
+
   const gradeSubmission = async (subId: string, grade: number, feedback: string) => {
     await supabase.from("assignment_submissions").update({ grade, feedback, graded_at: new Date().toISOString() }).eq("id", subId);
     loadCourse();
