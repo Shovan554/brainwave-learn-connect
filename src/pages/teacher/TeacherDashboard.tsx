@@ -6,7 +6,11 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Users, AlertTriangle, PlusCircle, ArrowRight, ClipboardCheck, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { BookOpen, Users, AlertTriangle, PlusCircle, ArrowRight, ClipboardCheck, Clock, Sparkles, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 interface UngradedSubmission {
   id: string;
@@ -22,6 +26,34 @@ export default function TeacherDashboard() {
   const [courses, setCourses] = useState<any[]>([]);
   const [stats, setStats] = useState({ courses: 0, students: 0, reports: 0 });
   const [ungradedSubs, setUngradedSubs] = useState<UngradedSubmission[]>([]);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const analyzeStudents = async () => {
+    if (!user) return;
+    setAnalyzing(true);
+    setAnalysisOpen(true);
+    setAnalysis(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("analyze-students", {
+        body: { userToken: session?.access_token },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        setAnalysisOpen(false);
+      } else {
+        setAnalysis(data?.analysis || "Unable to generate analysis.");
+      }
+    } catch (e) {
+      toast.error("Failed to analyze students");
+      setAnalysisOpen(false);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -93,12 +125,18 @@ export default function TeacherDashboard() {
           <h1 className="text-2xl font-bold tracking-tight">Teacher Dashboard</h1>
           <p className="text-muted-foreground">Manage your courses and students</p>
         </div>
-        <Button asChild>
-          <Link to="/teacher/courses/new">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Course
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={analyzeStudents} disabled={analyzing} className="gap-2">
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Analyze Students
+          </Button>
+          <Button asChild>
+            <Link to="/teacher/courses/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Course
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">
@@ -224,6 +262,31 @@ export default function TeacherDashboard() {
           ))}
         </div>
       )}
+
+      {/* Analyze Students Dialog */}
+      <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Student Analysis
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            {analyzing ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Analyzing all students across your courses...</p>
+              </div>
+            ) : analysis ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none px-1">
+                <ReactMarkdown>{analysis}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">Unable to generate analysis.</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
