@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function StudentProfile() {
