@@ -284,57 +284,76 @@ export default function StudentDashboard() {
         </Card>
       </div>
 
-      {/* ── Course Grades Chart ── */}
+      {/* ── Course Grades ── */}
       {courseGrades.length > 0 && (
         <div className="mb-8">
           <div className="mb-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">Course Grades</h2>
           </div>
-          <Card>
-            <CardContent className="p-4">
-              <ResponsiveContainer width="100%" height={Math.max(200, courseGrades.length * 50)}>
-                <BarChart
-                  data={courseGrades.map(cg => ({
-                    name: cg.course_title.length > 20 ? cg.course_title.slice(0, 20) + "…" : cg.course_title,
-                    percentage: cg.percentage !== null ? Math.round(cg.percentage * 10) / 10 : 0,
-                    letter: cg.percentage !== null
-                      ? cg.percentage >= 90 ? "A" : cg.percentage >= 80 ? "B" : cg.percentage >= 70 ? "C" : cg.percentage >= 60 ? "D" : "F"
-                      : "—",
-                    fill: cg.percentage !== null
-                      ? cg.percentage >= 90 ? "hsl(var(--primary))" : cg.percentage >= 80 ? "hsl(142 71% 45%)" : cg.percentage >= 70 ? "hsl(48 96% 53%)" : cg.percentage >= 60 ? "hsl(25 95% 53%)" : "hsl(var(--destructive))"
-                      : "hsl(var(--muted))",
-                  }))}
-                  layout="vertical"
-                  margin={{ top: 5, right: 60, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.[0]) return null;
-                      const d = payload[0].payload;
-                      return (
-                        <div className="rounded-lg border bg-popover p-2 shadow-md text-sm">
-                          <p className="font-semibold">{d.name}</p>
-                          <p>{d.percentage}% — Grade: <span className="font-bold">{d.letter}</span></p>
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardContent className="p-6">
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 mb-5">
+                {[
+                  { letter: "A", label: "90-100%", color: "hsl(var(--primary))" },
+                  { letter: "B", label: "80-89%", color: "hsl(152 69% 53%)" },
+                  { letter: "C", label: "70-79%", color: "hsl(45 93% 58%)" },
+                  { letter: "D", label: "60-69%", color: "hsl(25 95% 63%)" },
+                  { letter: "F", label: "<60%", color: "hsl(var(--destructive))" },
+                ].map(g => (
+                  <div key={g.letter} className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
+                    <span className="text-[11px] text-muted-foreground">{g.letter} ({g.label})</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {courseGrades.map(cg => {
+                  const pct = cg.percentage ?? 0;
+                  const letter = cg.percentage !== null
+                    ? pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F"
+                    : "—";
+                  const color = cg.percentage !== null
+                    ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
+                    : "hsl(var(--muted))";
+                  const emoji = cg.percentage !== null
+                    ? pct >= 90 ? "🌟" : pct >= 80 ? "✨" : pct >= 70 ? "👍" : pct >= 60 ? "💪" : "📚"
+                    : "—";
+
+                  return (
+                    <div
+                      key={cg.course_id}
+                      className="group cursor-pointer rounded-xl p-3 transition-all duration-300 hover:bg-muted/50 hover:scale-[1.01]"
+                      onClick={() => navigate("/student/grades")}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium group-hover:text-primary transition-colors truncate max-w-[60%]">
+                          {cg.course_title}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{pct > 0 ? `${pct.toFixed(1)}%` : "No grades"}</span>
+                          <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
+                            {letter}
+                          </span>
+                          <span className="text-sm">{emoji}</span>
                         </div>
-                      );
-                    }}
-                  />
-                  <Bar dataKey="percentage" radius={[0, 6, 6, 0]} barSize={24}>
-                    {courseGrades.map((_, i) => (
-                      <Cell key={i} fill={
-                        courseGrades[i].percentage !== null
-                          ? courseGrades[i].percentage! >= 90 ? "hsl(var(--primary))" : courseGrades[i].percentage! >= 80 ? "hsl(142 71% 45%)" : courseGrades[i].percentage! >= 70 ? "hsl(48 96% 53%)" : courseGrades[i].percentage! >= 60 ? "hsl(25 95% 53%)" : "hsl(var(--destructive))"
-                          : "hsl(var(--muted))"
-                      } />
-                    ))}
-                    <LabelList dataKey="letter" position="right" style={{ fontSize: 13, fontWeight: 700, fill: "hsl(var(--foreground))" }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                      </div>
+                      <div className="relative h-3 rounded-full bg-muted/60 overflow-hidden">
+                        <div
+                          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+                          style={{
+                            width: `${pct}%`,
+                            background: `linear-gradient(90deg, ${color}CC, ${color})`,
+                            boxShadow: `0 0 12px ${color}40`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
