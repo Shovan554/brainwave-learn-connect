@@ -502,11 +502,20 @@ export default function Messages() {
           {selectedConvo ? (
             <>
               <div className="p-4 border-b border-border flex items-center gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={otherAvatar || undefined} alt={otherName} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">{otherName.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <h3 className="font-semibold">{otherName}</h3>
+                {isGroup ? (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                ) : (
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={otherAvatar || undefined} alt={otherName} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">{otherName.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="min-w-0">
+                  <h3 className="font-semibold truncate">{otherName}</h3>
+                  {isGroup && <p className="text-xs text-muted-foreground">{(selectedConvoData?.participants?.length || 0) + 1} members</p>}
+                </div>
               </div>
 
               <ScrollArea className="flex-1 p-4">
