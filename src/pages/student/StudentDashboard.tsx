@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { AIDashboardInsight } from "@/components/AIDashboardInsight";
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
@@ -48,7 +49,7 @@ interface CourseGrade {
 }
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
@@ -223,6 +224,9 @@ export default function StudentDashboard() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* ── AI Suggestion Banner ── */}
+      <AIDashboardInsight userToken={session?.access_token ?? null} />
 
       {/* ── Metrics Strip ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">

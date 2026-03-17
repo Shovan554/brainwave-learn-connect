@@ -2,3 +2,6 @@ project_id = "exemwbxdihmwrvzalvcj"
 
 [functions.ai-copilot]
 verify_jwt = true
+
+[functions.dashboard-insight]
+verify_jwt = false
