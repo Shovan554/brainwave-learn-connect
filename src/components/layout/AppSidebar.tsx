@@ -56,6 +56,7 @@ export function AppSidebar() {
     { to: "/explore", label: "Explore", icon: Compass },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/reels", label: "Reels", icon: Film },
+    { to: "/student/profile", label: "My Profile", icon: User },
   ];
 
   const studentLinks = [

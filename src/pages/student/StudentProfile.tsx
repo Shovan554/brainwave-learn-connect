@@ -10,13 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, Save, Camera } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export default function StudentProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState({ name: "", bio: "", major: "", avatar_url: "" });
   const [projects, setProjects] = useState<any[]>([]);
+  const [myPosts, setMyPosts] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [newProject, setNewProject] = useState({ title: "", description: "", github_url: "", tech_stack: "" });
@@ -28,12 +30,14 @@ export default function StudentProfile() {
   }, [user]);
 
   const loadData = async () => {
-    const [profileRes, projectsRes] = await Promise.all([
+    const [profileRes, projectsRes, postsRes] = await Promise.all([
       supabase.from("profiles").select("name, bio, major, avatar_url").eq("user_id", user!.id).single(),
       supabase.from("project_portfolios").select("*").eq("student_id", user!.id).order("created_at", { ascending: false }),
+      supabase.from("posts").select("*").eq("author_id", user!.id).order("created_at", { ascending: false }),
     ]);
     if (profileRes.data) setProfile(profileRes.data as any);
     if (projectsRes.data) setProjects(projectsRes.data);
+    if (postsRes.data) setMyPosts(postsRes.data);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +97,13 @@ export default function StudentProfile() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setNewProject({ title: "", description: "", github_url: "", tech_stack: "" });
     loadData();
+  };
+
+  const deletePost = async (postId: string) => {
+    if (!confirm("Delete this post?")) return;
+    await supabase.from("posts").delete().eq("id", postId);
+    setMyPosts(prev => prev.filter(p => p.id !== postId));
+    toast({ title: "Post deleted" });
   };
 
   const deleteProject = async (id: string) => {
@@ -196,6 +207,38 @@ export default function StudentProfile() {
                 </Button>
               </div>
             ))}
+          </CardContent>
+        </Card>
+        {/* Your Posts section */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Your Posts</CardTitle></CardHeader>
+          <CardContent>
+            {myPosts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">You haven't posted anything yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {myPosts.map(post => (
+                  <div key={post.id} className="flex items-start justify-between rounded-xl border p-4 gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
+                      {post.image_url && (
+                        <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                          <ImageIcon className="h-3 w-3" /> Image attached
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Heart className="h-3 w-3" /> {post.likes_count}</span>
+                        <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {post.comments_count}</span>
+                        <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
