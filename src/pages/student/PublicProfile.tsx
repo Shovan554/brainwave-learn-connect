@@ -9,6 +9,7 @@ import { Loader2, ExternalLink, User, ArrowLeft } from "lucide-react";
 
 export default function PublicProfile() {
   const { studentId } = useParams<{ studentId: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
