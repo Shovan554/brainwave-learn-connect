@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart, MessageCircle, Send, Plus, Image as ImageIcon,
-  Loader2, X, MoreHorizontal, Trash2, Compass,
+  Loader2, X, MoreHorizontal, Trash2, Compass, Users,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
