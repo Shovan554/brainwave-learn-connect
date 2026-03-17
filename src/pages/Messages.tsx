@@ -261,6 +261,26 @@ export default function Messages() {
     }
   };
 
+  const deleteConversation = async (convoId: string) => {
+    if (!confirm("Delete this conversation? This cannot be undone.")) return;
+    // Delete attachments, messages, participants, then conversation
+    const { data: msgs } = await supabase.from("messages").select("id").eq("conversation_id", convoId);
+    if (msgs?.length) {
+      const msgIds = msgs.map((m: any) => m.id);
+      await supabase.from("message_attachments").delete().in("message_id", msgIds);
+    }
+    await supabase.from("messages").delete().eq("conversation_id", convoId);
+    await supabase.from("conversation_participants").delete().eq("conversation_id", convoId);
+    await supabase.from("conversations").delete().eq("id", convoId);
+
+    if (selectedConvo === convoId) {
+      setSelectedConvo(null);
+      setMessages([]);
+    }
+    setConversations(prev => prev.filter(c => c.id !== convoId));
+    toast.success("Conversation deleted");
+  };
+
   const selectedConvoData = conversations.find(c => c.id === selectedConvo);
   const otherName = selectedConvoData?.participants?.[0]?.name || "Chat";
   const otherAvatar = selectedConvoData?.participants?.[0]?.avatar_url;
