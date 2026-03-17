@@ -22,6 +22,7 @@ import StudentGrades from "./pages/student/StudentGrades";
 import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
+import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
