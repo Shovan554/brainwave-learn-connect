@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
-  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save,
+  Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save, CheckCircle,
 } from "lucide-react";
 import { StudentFeedbackCard } from "@/components/StudentFeedbackCard";
 
