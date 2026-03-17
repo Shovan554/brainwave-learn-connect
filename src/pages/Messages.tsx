@@ -29,6 +29,7 @@ interface Message {
 }
 
 export default function Messages() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
