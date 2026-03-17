@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -30,6 +30,7 @@ interface CourseGrades {
 
 export default function StudentGrades() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [courseGrades, setCourseGrades] = useState<CourseGrades[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -175,7 +176,7 @@ export default function StudentGrades() {
                       </TableHeader>
                       <TableBody>
                         {cg.submissions.map((sub) => (
-                          <TableRow key={sub.id}>
+                          <TableRow key={sub.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/student/courses/${cg.course_id}/assignments/${sub.id}`)}>
                             <TableCell className="font-medium">{sub.assignment_title}</TableCell>
                             <TableCell className="text-right">
                               {sub.grade !== null ? (
