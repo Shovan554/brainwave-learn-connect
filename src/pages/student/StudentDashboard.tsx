@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { AIDashboardInsight } from "@/components/AIDashboardInsight";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
