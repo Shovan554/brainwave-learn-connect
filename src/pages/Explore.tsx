@@ -271,10 +271,19 @@ export default function Explore() {
 
     const profileMap = Object.fromEntries(profiles?.map(p => [p.user_id, p.name]) || []);
 
-    const seen = new Set<string>();
-    const contacts = allParticipants
-      .map(p => ({ conversation_id: p.conversation_id, user_id: p.user_id, name: profileMap[p.user_id] || "User" }))
-      .filter(c => { if (seen.has(c.user_id)) return false; seen.add(c.user_id); return true; });
+    // Group participants by conversation
+    const convoMap = new Map<string, string[]>();
+    for (const p of allParticipants) {
+      const arr = convoMap.get(p.conversation_id) || [];
+      arr.push(profileMap[p.user_id] || "User");
+      convoMap.set(p.conversation_id, arr);
+    }
+
+    const contacts = Array.from(convoMap.entries()).map(([convoId, names]) => ({
+      conversation_id: convoId,
+      name: names.join(", "),
+      isGroup: names.length > 1,
+    }));
 
     setShareContacts(contacts);
   };
