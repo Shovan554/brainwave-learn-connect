@@ -306,6 +306,44 @@ export default function CourseDetail() {
     toast({ title: "Assignment deleted" });
   };
 
+  const handleAssignmentFileUpload = async (assignmentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAssignmentFile(true);
+    const filePath = `${user.id}/${id}/assignments/${assignmentId}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("course-files").upload(filePath, file);
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploadingAssignmentFile(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+    await supabase.from("assignment_assets").insert({
+      assignment_id: assignmentId,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+    });
+    setUploadingAssignmentFile(false);
+    loadCourse();
+    toast({ title: "File attached" });
+  };
+
+  const addAssignmentLink = async (assignmentId: string, linkUrl: string, linkName: string) => {
+    if (!linkUrl.trim()) return;
+    await supabase.from("assignment_assets").insert({
+      assignment_id: assignmentId,
+      link_url: linkUrl.trim(),
+      file_name: linkName.trim() || linkUrl.trim(),
+    });
+    loadCourse();
+    toast({ title: "Link attached" });
+  };
+
+  const deleteAssignmentAsset = async (assetId: string) => {
+    await supabase.from("assignment_assets").delete().eq("id", assetId);
+    loadCourse();
+  };
+
   const deleteWeek = async (weekId: string) => {
     if (!confirm("Delete this week and all its folders/materials?")) return;
     await supabase.from("weekly_content").delete().eq("id", weekId);
