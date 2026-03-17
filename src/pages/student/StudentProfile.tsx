@@ -309,6 +309,65 @@ export default function StudentProfile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Comments Dialog */}
+      <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Comments</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {loadingComments ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No comments yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {comments.map(c => (
+                  <div key={c.id} className="flex gap-2.5 group">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={c.author_avatar || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {c.author_name?.charAt(0)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="bg-muted rounded-xl px-3 py-2">
+                        <p className="text-xs font-semibold">{c.author_name}</p>
+                        <p className="text-sm">{c.content}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 px-1">
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                        </span>
+                        {c.author_id === user?.id && (
+                          <button onClick={() => deleteComment(c.id)} className="text-[10px] text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+          <div className="flex gap-2 mt-2">
+            <Input
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={e => setNewComment(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendComment(); } }}
+              className="rounded-xl"
+            />
+            <Button size="icon" onClick={sendComment} disabled={sendingComment || !newComment.trim()} className="rounded-xl shrink-0">
+              {sendingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
