@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, FileText, Calendar, Clock, Users, Flag,
-  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
+  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder, Download, Eye,
 } from "lucide-react";
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
@@ -36,6 +36,7 @@ export default function StudentCourseDetail() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [mySubmissions, setMySubmissions] = useState<Record<string, any>>({});
+  const [assignmentAssets, setAssignmentAssets] = useState<Record<string, any[]>>({});
   const [reportTarget, setReportTarget] = useState<{ type: string; id: string } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
@@ -114,6 +115,22 @@ export default function StudentCourseDetail() {
     }
     if (assignRes.data) {
       setAssignments(assignRes.data);
+      // Load assignment assets
+      const assignIds = assignRes.data.map((a: any) => a.id);
+      if (assignIds.length > 0) {
+        const { data: aAssets } = await supabase
+          .from("assignment_assets")
+          .select("*")
+          .in("assignment_id", assignIds);
+        if (aAssets) {
+          const groupedAssets: Record<string, any[]> = {};
+          for (const a of aAssets) {
+            if (!groupedAssets[a.assignment_id]) groupedAssets[a.assignment_id] = [];
+            groupedAssets[a.assignment_id].push(a);
+          }
+          setAssignmentAssets(groupedAssets);
+        }
+      }
       if (user) {
         const { data: subs } = await supabase
           .from("assignment_submissions")
@@ -389,7 +406,39 @@ export default function StudentCourseDetail() {
                     </div>
 
                     {expandedAssignment === a.id && (
-                      <div className="mt-4 space-y-3 border-t pt-4">
+                      <div className="mt-4 space-y-4 border-t pt-4">
+                        {/* Assignment Files */}
+                        {(assignmentAssets[a.id] || []).length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase text-muted-foreground">Assignment Files</p>
+                            {(assignmentAssets[a.id] || []).map((asset: any) => {
+                              const url = asset.file_url || asset.link_url;
+                              const isPreviewable = asset.file_name && /\.(pdf|png|jpg|jpeg|gif|webp)$/i.test(asset.file_name);
+                              return (
+                                <div key={asset.id} className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    {asset.file_url ? <FileText className="h-4 w-4 text-primary shrink-0" /> : <ExternalLink className="h-4 w-4 text-primary shrink-0" />}
+                                    <span className="text-sm font-medium truncate">{asset.file_name || asset.link_url}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {isPreviewable && (
+                                      <Button variant="ghost" size="sm" asChild className="h-7 gap-1 text-xs">
+                                        <a href={url} target="_blank" rel="noreferrer">
+                                          <Eye className="h-3 w-3" /> Preview
+                                        </a>
+                                      </Button>
+                                    )}
+                                    <Button variant="outline" size="sm" asChild className="h-7 gap-1 text-xs">
+                                      <a href={url} target="_blank" rel="noreferrer" download>
+                                        <Download className="h-3 w-3" /> Download
+                                      </a>
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                         {sub ? (
                           <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase text-muted-foreground">Your Submission</p>

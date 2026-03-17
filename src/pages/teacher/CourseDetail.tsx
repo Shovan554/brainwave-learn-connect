@@ -52,6 +52,8 @@ export default function CourseDetail() {
   });
   const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Record<string, any[]>>({});
+  const [assignmentAssets, setAssignmentAssets] = useState<Record<string, any[]>>({});
+  const [uploadingAssignmentFile, setUploadingAssignmentFile] = useState(false);
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
@@ -131,12 +133,12 @@ export default function CourseDetail() {
       setAssignments(assignRes.data);
       const assignIds = assignRes.data.map((a: any) => a.id);
       if (assignIds.length > 0) {
+        // Load submissions
         const { data: subs } = await supabase
           .from("assignment_submissions")
           .select("*")
           .in("assignment_id", assignIds);
         if (subs && subs.length > 0) {
-          // Fetch profiles for submission students
           const subStudentIds = [...new Set(subs.map((s: any) => s.student_id))];
           const { data: subProfiles } = await supabase
             .from("profiles")
@@ -153,6 +155,19 @@ export default function CourseDetail() {
             grouped[s.assignment_id].push(enriched);
           }
           setSubmissions(grouped);
+        }
+        // Load assignment assets
+        const { data: aAssets } = await supabase
+          .from("assignment_assets")
+          .select("*")
+          .in("assignment_id", assignIds);
+        if (aAssets) {
+          const groupedAssets: Record<string, any[]> = {};
+          for (const a of aAssets) {
+            if (!groupedAssets[a.assignment_id]) groupedAssets[a.assignment_id] = [];
+            groupedAssets[a.assignment_id].push(a);
+          }
+          setAssignmentAssets(groupedAssets);
         }
       }
     }
@@ -289,6 +304,44 @@ export default function CourseDetail() {
     await supabase.from("assignments").delete().eq("id", aId);
     loadCourse();
     toast({ title: "Assignment deleted" });
+  };
+
+  const handleAssignmentFileUpload = async (assignmentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAssignmentFile(true);
+    const filePath = `${user.id}/${id}/assignments/${assignmentId}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("course-files").upload(filePath, file);
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploadingAssignmentFile(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+    await supabase.from("assignment_assets").insert({
+      assignment_id: assignmentId,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+    });
+    setUploadingAssignmentFile(false);
+    loadCourse();
+    toast({ title: "File attached" });
+  };
+
+  const addAssignmentLink = async (assignmentId: string, linkUrl: string, linkName: string) => {
+    if (!linkUrl.trim()) return;
+    await supabase.from("assignment_assets").insert({
+      assignment_id: assignmentId,
+      link_url: linkUrl.trim(),
+      file_name: linkName.trim() || linkUrl.trim(),
+    });
+    loadCourse();
+    toast({ title: "Link attached" });
+  };
+
+  const deleteAssignmentAsset = async (assetId: string) => {
+    await supabase.from("assignment_assets").delete().eq("id", assetId);
+    loadCourse();
   };
 
   const deleteWeek = async (weekId: string) => {
@@ -527,15 +580,40 @@ export default function CourseDetail() {
                   </div>
 
                   {expandedAssignment === a.id && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
-                      {(submissions[a.id] || []).length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No submissions yet</p>
-                      ) : (
-                        (submissions[a.id] || []).map((sub) => (
-                          <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
-                        ))
-                      )}
+                    <div className="mt-4 space-y-4 border-t pt-4">
+                      {/* Assignment Files */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Attached Files</p>
+                        {(assignmentAssets[a.id] || []).map((asset: any) => (
+                          <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
+                            <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                              {asset.file_url ? <FileText className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                              {asset.file_name || asset.link_url}
+                            </a>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => deleteAssignmentAsset(asset.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`assign-upload-${a.id}`} className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                            <Upload className="h-3 w-3" /> {uploadingAssignmentFile ? "Uploading..." : "Upload File"}
+                          </Label>
+                          <input id={`assign-upload-${a.id}`} type="file" className="hidden" onChange={(e) => handleAssignmentFileUpload(a.id, e)} disabled={uploadingAssignmentFile} />
+                        </div>
+                      </div>
+
+                      {/* Submissions */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
+                        {(submissions[a.id] || []).length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No submissions yet</p>
+                        ) : (
+                          (submissions[a.id] || []).map((sub) => (
+                            <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
+                          ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>
