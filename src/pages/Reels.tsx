@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ interface ShareContact {
 
 export default function Reels() {
   const { user, role } = useAuth();
+  const [searchParams] = useSearchParams();
   const [reels, setReels] = useState<Reel[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -87,6 +89,20 @@ export default function Reels() {
   }, [user]);
 
   useEffect(() => { loadReels(); }, [loadReels]);
+
+  // Auto-scroll to shared reel when loaded via ?id= param
+  useEffect(() => {
+    const targetId = searchParams.get("id");
+    if (!targetId || reels.length === 0) return;
+    const targetIndex = reels.findIndex(r => r.id === targetId);
+    if (targetIndex < 0) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const targetEl = container.querySelector(`[data-index="${targetIndex}"]`);
+    if (targetEl) {
+      setTimeout(() => targetEl.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [reels, searchParams]);
 
   // Intersection observer for snap scrolling
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Send, Paperclip, Plus, Search, Image, FileText, X, Trash2 } from "lucide-react";
+import { Send, Paperclip, Plus, Search, Image, FileText, X, Trash2, Film, Play } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -28,6 +29,7 @@ interface Message {
 }
 
 export default function Messages() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
@@ -378,10 +380,38 @@ export default function Messages() {
                 <div className="space-y-3">
                   {messages.map(msg => {
                     const isMe = msg.sender_id === user?.id;
+                    // Detect reel share messages
+                    const reelMatch = msg.content?.match(/🎬 Shared a reel: "(.+?)"\n.*\/reels\?id=([a-f0-9-]+)/);
+                    const reelTitle = reelMatch?.[1];
+                    const reelId = reelMatch?.[2];
+
                     return (
                       <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                          {msg.content && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
+                          {reelId && reelTitle ? (
+                            <button
+                              onClick={() => navigate(`/reels?id=${reelId}`)}
+                              className="w-full text-left group"
+                            >
+                              <div className={`flex items-center gap-3 rounded-xl p-2.5 -mx-1 transition-colors ${isMe ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-background/60 hover:bg-background/80"}`}>
+                                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${isMe ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
+                                  <Play className={`h-5 w-5 ml-0.5 ${isMe ? "text-primary-foreground" : "text-primary"}`} fill="currentColor" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Film className={`h-3 w-3 shrink-0 ${isMe ? "text-primary-foreground/70" : "text-primary"}`} />
+                                    <span className={`text-[10px] font-semibold uppercase tracking-wider ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                                      Reel
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-medium truncate">{reelTitle}</p>
+                                  <p className={`text-[10px] ${isMe ? "text-primary-foreground/50" : "text-muted-foreground"}`}>Tap to watch</p>
+                                </div>
+                              </div>
+                            </button>
+                          ) : (
+                            msg.content && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          )}
                           {msg.attachments?.map(att => (
                             <div key={att.id} className="mt-2">
                               {att.file_type === "image" ? (
