@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart, MessageCircle, Send, Plus, Image as ImageIcon,
-  Loader2, X, MoreHorizontal, Trash2, Compass,
+  Loader2, X, MoreHorizontal, Trash2, Compass, Users,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -69,7 +69,7 @@ export default function Explore() {
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePost, setSharePost] = useState<Post | null>(null);
-  const [shareContacts, setShareContacts] = useState<{ conversation_id: string; user_id: string; name: string }[]>([]);
+  const [shareContacts, setShareContacts] = useState<{ conversation_id: string; name: string; isGroup: boolean }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
 
   const loadPosts = useCallback(async () => {
@@ -271,10 +271,19 @@ export default function Explore() {
 
     const profileMap = Object.fromEntries(profiles?.map(p => [p.user_id, p.name]) || []);
 
-    const seen = new Set<string>();
-    const contacts = allParticipants
-      .map(p => ({ conversation_id: p.conversation_id, user_id: p.user_id, name: profileMap[p.user_id] || "User" }))
-      .filter(c => { if (seen.has(c.user_id)) return false; seen.add(c.user_id); return true; });
+    // Group participants by conversation
+    const convoMap = new Map<string, string[]>();
+    for (const p of allParticipants) {
+      const arr = convoMap.get(p.conversation_id) || [];
+      arr.push(profileMap[p.user_id] || "User");
+      convoMap.set(p.conversation_id, arr);
+    }
+
+    const contacts = Array.from(convoMap.entries()).map(([convoId, names]) => ({
+      conversation_id: convoId,
+      name: names.join(", "),
+      isGroup: names.length > 1,
+    }));
 
     setShareContacts(contacts);
   };
@@ -539,10 +548,13 @@ export default function Explore() {
                     <div className="flex items-center gap-2.5">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                          {c.name.charAt(0).toUpperCase()}
+                          {c.isGroup ? <Users className="h-3.5 w-3.5" /> : c.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">{c.name}</span>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium block truncate max-w-[180px]">{c.name}</span>
+                        {c.isGroup && <span className="text-[10px] text-muted-foreground">Group</span>}
+                      </div>
                     </div>
                     <Button
                       size="sm"

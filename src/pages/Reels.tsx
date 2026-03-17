@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2 } from "lucide-react";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface Reel {
@@ -31,6 +31,7 @@ interface ShareContact {
   user_id: string;
   name: string;
   avatar_url?: string;
+  isGroup?: boolean;
 }
 
 export default function Reels() {
@@ -229,15 +230,24 @@ export default function Reels() {
       avatar_url: profileMap[p.user_id]?.avatar_url || undefined,
     }));
 
-    // Deduplicate by user_id (keep first conversation)
-    const seen = new Set<string>();
-    const unique = contacts.filter(c => {
-      if (seen.has(c.user_id)) return false;
-      seen.add(c.user_id);
-      return true;
-    });
+    // Group participants by conversation to show each conversation separately
+    const convoMap = new Map<string, { names: string[]; avatars: (string | undefined)[] }>();
+    for (const p of allParticipants) {
+      const entry = convoMap.get(p.conversation_id) || { names: [], avatars: [] };
+      entry.names.push(profileMap[p.user_id]?.name || "User");
+      entry.avatars.push(profileMap[p.user_id]?.avatar_url || undefined);
+      convoMap.set(p.conversation_id, entry);
+    }
 
-    setShareContacts(unique);
+    const convos: ShareContact[] = Array.from(convoMap.entries()).map(([convoId, { names, avatars }]) => ({
+      conversation_id: convoId,
+      user_id: convoId, // use convo id as key
+      name: names.join(", "),
+      avatar_url: names.length === 1 ? avatars[0] : undefined,
+      isGroup: names.length > 1,
+    }));
+
+    setShareContacts(convos);
   };
 
   const searchShareUsers = async (query: string) => {
@@ -570,10 +580,13 @@ export default function Reels() {
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                            {c.name.charAt(0).toUpperCase()}
+                            {c.isGroup ? <Users className="h-3.5 w-3.5" /> : c.name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">{c.name}</span>
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium block truncate max-w-[180px]">{c.name}</span>
+                          {c.isGroup && <span className="text-[10px] text-muted-foreground">Group</span>}
+                        </div>
                       </div>
                       <Button
                         size="sm"
