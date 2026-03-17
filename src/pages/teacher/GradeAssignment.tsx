@@ -218,7 +218,7 @@ export default function GradeAssignment() {
                   </div>
                   {currentSub.file_name && /\.pdf$/i.test(currentSub.file_name) ? (
                     <iframe
-                      src={currentSub.file_url}
+                      src={`https://docs.google.com/gview?url=${encodeURIComponent(currentSub.file_url)}&embedded=true`}
                       className="w-full rounded-lg border bg-muted/30"
                       style={{ height: "400px" }}
                       title="PDF Preview"
