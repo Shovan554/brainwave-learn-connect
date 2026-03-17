@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles, GraduationCap } from "lucide-react";
+import { BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles, GraduationCap, AlertTriangle, Flame } from "lucide-react";
 
 interface PrioritizedAssignment {
   id: string;
