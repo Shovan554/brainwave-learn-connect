@@ -35,6 +35,7 @@ interface ShareContact {
 
 export default function Reels() {
   const { user, role } = useAuth();
+  const [searchParams] = useSearchParams();
   const [reels, setReels] = useState<Reel[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
