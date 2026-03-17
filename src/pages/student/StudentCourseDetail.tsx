@@ -115,6 +115,22 @@ export default function StudentCourseDetail() {
     }
     if (assignRes.data) {
       setAssignments(assignRes.data);
+      // Load assignment assets
+      const assignIds = assignRes.data.map((a: any) => a.id);
+      if (assignIds.length > 0) {
+        const { data: aAssets } = await supabase
+          .from("assignment_assets")
+          .select("*")
+          .in("assignment_id", assignIds);
+        if (aAssets) {
+          const groupedAssets: Record<string, any[]> = {};
+          for (const a of aAssets) {
+            if (!groupedAssets[a.assignment_id]) groupedAssets[a.assignment_id] = [];
+            groupedAssets[a.assignment_id].push(a);
+          }
+          setAssignmentAssets(groupedAssets);
+        }
+      }
       if (user) {
         const { data: subs } = await supabase
           .from("assignment_submissions")
