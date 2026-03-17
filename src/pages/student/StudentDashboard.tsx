@@ -225,6 +225,9 @@ export default function StudentDashboard() {
         </Dialog>
       </div>
 
+      {/* ── AI Suggestion Banner ── */}
+      <AIDashboardInsight userToken={session?.access_token ?? null} />
+
       {/* ── Metrics Strip ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {/* Past Due */}
