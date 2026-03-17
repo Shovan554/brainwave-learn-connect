@@ -45,6 +45,12 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Group chat state
+  const [groupMembers, setGroupMembers] = useState<{ user_id: string; name: string }[]>([]);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [groupSearchResults, setGroupSearchResults] = useState<any[]>([]);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+
   const loadConversations = useCallback(async () => {
     if (!user) return;
     const { data: participations } = await supabase
