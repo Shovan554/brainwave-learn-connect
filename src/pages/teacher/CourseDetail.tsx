@@ -61,7 +61,7 @@ export default function CourseDetail() {
 
   useEffect(() => {
     if (!id || !user) return;
-    loadCourse();
+    loadCourse(true);
   }, [id, user]);
 
   const loadCourse = async (isInitial = false) => {
