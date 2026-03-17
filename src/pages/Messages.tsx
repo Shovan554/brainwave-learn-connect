@@ -339,9 +339,9 @@ export default function Messages() {
                     <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
                     <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
                   </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
-                    <p className="text-xs text-muted-foreground truncate">{c.lastMessage || "No messages yet"}</p>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="text-sm font-medium truncate text-left">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
+                    <p className="text-xs text-muted-foreground truncate text-left max-w-[160px]">{c.lastMessage || "No messages yet"}</p>
                   </div>
                 </button>
                 <Button
