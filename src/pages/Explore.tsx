@@ -69,7 +69,7 @@ export default function Explore() {
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePost, setSharePost] = useState<Post | null>(null);
-  const [shareContacts, setShareContacts] = useState<{ conversation_id: string; user_id: string; name: string }[]>([]);
+  const [shareContacts, setShareContacts] = useState<{ conversation_id: string; name: string; isGroup: boolean }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
 
   const loadPosts = useCallback(async () => {
