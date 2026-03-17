@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Heart, Play, Plus, Film, Volume2, VolumeX } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Reel {
@@ -24,6 +25,13 @@ interface Reel {
   liked_by_me?: boolean;
 }
 
+interface ShareContact {
+  conversation_id: string;
+  user_id: string;
+  name: string;
+  avatar_url?: string;
+}
+
 export default function Reels() {
   const { user, role } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
@@ -37,6 +45,14 @@ export default function Reels() {
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+
+  // Share state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareReel, setShareReel] = useState<Reel | null>(null);
+  const [shareContacts, setShareContacts] = useState<ShareContact[]>([]);
+  const [shareSearch, setShareSearch] = useState("");
+  const [shareSearchResults, setShareSearchResults] = useState<{ user_id: string; name: string }[]>([]);
+  const [sharing, setSharing] = useState<string | null>(null);
 
   const loadReels = useCallback(async () => {
     const { data } = await supabase
@@ -83,7 +99,6 @@ export default function Reels() {
           const index = Number(entry.target.getAttribute("data-index"));
           if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
             setActiveIndex(index);
-            // Play this video, pause others
             Object.entries(videoRefs.current).forEach(([key, video]) => {
               if (!video) return;
               if (Number(key) === index) {
@@ -154,6 +169,137 @@ export default function Reels() {
       toast.error("Upload failed");
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Share functionality
+  const openShareDialog = async (reel: Reel) => {
+    setShareReel(reel);
+    setShareOpen(true);
+    setShareSearch("");
+    setShareSearchResults([]);
+
+    if (!user) return;
+
+    // Load existing conversations as contacts
+    const { data: participations } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (!participations?.length) { setShareContacts([]); return; }
+
+    const convoIds = participations.map(p => p.conversation_id);
+    const { data: allParticipants } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id, user_id")
+      .in("conversation_id", convoIds)
+      .neq("user_id", user.id);
+
+    if (!allParticipants?.length) { setShareContacts([]); return; }
+
+    const otherUserIds = [...new Set(allParticipants.map(p => p.user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name, avatar_url")
+      .in("user_id", otherUserIds);
+
+    const profileMap = Object.fromEntries(profiles?.map(p => [p.user_id, p]) || []);
+
+    const contacts: ShareContact[] = allParticipants.map(p => ({
+      conversation_id: p.conversation_id,
+      user_id: p.user_id,
+      name: profileMap[p.user_id]?.name || "User",
+      avatar_url: profileMap[p.user_id]?.avatar_url || undefined,
+    }));
+
+    // Deduplicate by user_id (keep first conversation)
+    const seen = new Set<string>();
+    const unique = contacts.filter(c => {
+      if (seen.has(c.user_id)) return false;
+      seen.add(c.user_id);
+      return true;
+    });
+
+    setShareContacts(unique);
+  };
+
+  const searchShareUsers = async (query: string) => {
+    setShareSearch(query);
+    if (query.length < 2) { setShareSearchResults([]); return; }
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, name")
+      .ilike("name", `%${query}%`)
+      .neq("user_id", user?.id || "")
+      .limit(10);
+    setShareSearchResults(data || []);
+  };
+
+  const shareToConversation = async (conversationId: string, recipientName: string) => {
+    if (!user || !shareReel) return;
+    setSharing(conversationId);
+    try {
+      const shareMessage = `🎬 Shared a reel: "${shareReel.title}"\n${window.location.origin}/reels?id=${shareReel.id}`;
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: shareMessage,
+      });
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+      toast.success(`Sent to ${recipientName}`);
+    } catch {
+      toast.error("Failed to share");
+    } finally {
+      setSharing(null);
+    }
+  };
+
+  const shareToNewUser = async (otherUserId: string, name: string) => {
+    if (!user) return;
+    setSharing(otherUserId);
+    try {
+      // Check for existing conversation
+      const { data: myConvos } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", user.id);
+
+      let convoId: string | null = null;
+
+      if (myConvos) {
+        for (const mc of myConvos) {
+          const { data: otherPart } = await supabase
+            .from("conversation_participants")
+            .select("user_id")
+            .eq("conversation_id", mc.conversation_id)
+            .eq("user_id", otherUserId);
+          if (otherPart?.length) {
+            convoId = mc.conversation_id;
+            break;
+          }
+        }
+      }
+
+      if (!convoId) {
+        convoId = crypto.randomUUID();
+        await supabase.from("conversations").insert({ id: convoId });
+        await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: user.id });
+        await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: otherUserId });
+      }
+
+      const shareMessage = `🎬 Shared a reel: "${shareReel!.title}"\n${window.location.origin}/reels?id=${shareReel!.id}`;
+      await supabase.from("messages").insert({
+        conversation_id: convoId,
+        sender_id: user.id,
+        content: shareMessage,
+      });
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convoId);
+      toast.success(`Sent to ${name}`);
+    } catch {
+      toast.error("Failed to share");
+    } finally {
+      setSharing(null);
     }
   };
 
@@ -262,6 +408,7 @@ export default function Reels() {
 
                   {/* Right action bar */}
                   <div className="absolute right-3 bottom-32 flex flex-col items-center gap-6 z-10">
+                    {/* Like */}
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleLike(reel); }}
                       className="flex flex-col items-center gap-1 group"
@@ -278,6 +425,17 @@ export default function Reels() {
                       <span className={`text-xs font-semibold ${reel.liked_by_me ? "text-red-400" : "text-white/80"}`}>
                         {reel.likes_count}
                       </span>
+                    </button>
+
+                    {/* Share */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openShareDialog(reel); }}
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                        <Send className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold text-white/80">Share</span>
                     </button>
                   </div>
 
@@ -323,6 +481,107 @@ export default function Reels() {
           </div>
         </div>
       )}
+
+      {/* Share Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-primary" /> Share Reel
+            </DialogTitle>
+          </DialogHeader>
+          {shareReel && (
+            <p className="text-xs text-muted-foreground truncate -mt-2">
+              🎬 {shareReel.title}
+            </p>
+          )}
+
+          {/* Search for new users */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              value={shareSearch}
+              onChange={e => searchShareUsers(e.target.value)}
+              className="pl-9 rounded-xl"
+            />
+          </div>
+
+          <ScrollArea className="max-h-[300px]">
+            <div className="space-y-1">
+              {/* Search results (new users) */}
+              {shareSearchResults.length > 0 && (
+                <>
+                  <p className="text-xs text-muted-foreground font-medium px-1 pt-1">Search Results</p>
+                  {shareSearchResults
+                    .filter(u => !shareContacts.some(c => c.user_id === u.user_id))
+                    .map(u => (
+                      <div
+                        key={u.user_id}
+                        className="flex items-center justify-between rounded-xl p-2.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                              {u.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{u.name}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl h-8 text-xs"
+                          disabled={sharing === u.user_id}
+                          onClick={() => shareToNewUser(u.user_id, u.name)}
+                        >
+                          {sharing === u.user_id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Send"}
+                        </Button>
+                      </div>
+                    ))}
+                </>
+              )}
+
+              {/* Existing conversations */}
+              {shareContacts.length > 0 && (
+                <>
+                  <p className="text-xs text-muted-foreground font-medium px-1 pt-2">Recent Chats</p>
+                  {shareContacts.map(c => (
+                    <div
+                      key={c.conversation_id}
+                      className="flex items-center justify-between rounded-xl p-2.5 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                            {c.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">{c.name}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl h-8 text-xs"
+                        disabled={sharing === c.conversation_id}
+                        onClick={() => shareToConversation(c.conversation_id, c.name)}
+                      >
+                        {sharing === c.conversation_id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Send"}
+                      </Button>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {shareContacts.length === 0 && shareSearchResults.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Search for a user to share this reel with
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
