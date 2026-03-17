@@ -16,6 +16,7 @@ import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
+import StudentGrades from "./pages/student/StudentGrades";
 import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
