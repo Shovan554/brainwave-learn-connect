@@ -90,6 +90,20 @@ export default function Reels() {
 
   useEffect(() => { loadReels(); }, [loadReels]);
 
+  // Auto-scroll to shared reel when loaded via ?id= param
+  useEffect(() => {
+    const targetId = searchParams.get("id");
+    if (!targetId || reels.length === 0) return;
+    const targetIndex = reels.findIndex(r => r.id === targetId);
+    if (targetIndex < 0) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const targetEl = container.querySelector(`[data-index="${targetIndex}"]`);
+    if (targetEl) {
+      setTimeout(() => targetEl.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [reels, searchParams]);
+
   // Intersection observer for snap scrolling
   useEffect(() => {
     const container = containerRef.current;
