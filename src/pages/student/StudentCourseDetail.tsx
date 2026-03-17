@@ -36,6 +36,7 @@ export default function StudentCourseDetail() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [mySubmissions, setMySubmissions] = useState<Record<string, any>>({});
+  const [assignmentAssets, setAssignmentAssets] = useState<Record<string, any[]>>({});
   const [reportTarget, setReportTarget] = useState<{ type: string; id: string } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
