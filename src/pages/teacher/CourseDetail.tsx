@@ -698,16 +698,13 @@ export default function CourseDetail() {
                         </div>
                       </div>
 
-                      {/* Submissions */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
-                        {(submissions[a.id] || []).length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No submissions yet</p>
-                        ) : (
-                          (submissions[a.id] || []).map((sub) => (
-                            <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
-                          ))
-                        )}
+                      {/* Link to grading page */}
+                      <div>
+                        <Button variant="default" size="sm" asChild className="gap-1">
+                          <Link to={`/teacher/courses/${id}/assignments/${a.id}/grade`}>
+                            <CheckCircle className="h-3 w-3" /> Grade Submissions ({(submissions[a.id] || []).length})
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   )}
