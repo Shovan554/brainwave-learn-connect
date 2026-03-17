@@ -347,8 +347,11 @@ export default function Messages() {
   };
 
   const selectedConvoData = conversations.find(c => c.id === selectedConvo);
-  const otherName = selectedConvoData?.participants?.[0]?.name || "Chat";
-  const otherAvatar = selectedConvoData?.participants?.[0]?.avatar_url;
+  const isGroup = (selectedConvoData?.participants?.length || 0) > 1;
+  const otherName = isGroup
+    ? selectedConvoData?.participants.map(p => p.name).join(", ") || "Group"
+    : selectedConvoData?.participants?.[0]?.name || "Chat";
+  const otherAvatar = !isGroup ? selectedConvoData?.participants?.[0]?.avatar_url : undefined;
 
   return (
     <DashboardLayout>
