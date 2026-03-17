@@ -156,31 +156,55 @@ export default function StudentDashboard() {
         </Card>
       ) : (
         <div className="mb-8 space-y-2">
-          {assignments.slice(0, 5).map((a, i) => (
-            <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${i === 0 ? "border-primary/40 bg-gradient-to-r from-primary/5 to-transparent" : "hover:border-primary/20"}`}>
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {i === 0 && (
-                      <Badge className="bg-primary text-primary-foreground text-xs gap-1">
-                        <Sparkles className="h-3 w-3" /> Top Priority
+          {assignments.slice(0, 5).map((a, i) => {
+            const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+            const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+            return (
+              <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+                i === 0
+                  ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
+                  : i === 1
+                  ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
+                  : "hover:border-primary/20"
+              }`}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {i === 0 && (
+                        <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
+                          <Flame className="h-3 w-3" /> Top Priority
+                        </Badge>
+                      )}
+                      {i === 1 && (
+                        <Badge className="bg-orange-500 text-white text-xs gap-1">
+                          <AlertTriangle className="h-3 w-3" /> High
+                        </Badge>
+                      )}
+                      {i === 2 && (
+                        <Badge variant="secondary" className="text-xs gap-1">
+                          <Sparkles className="h-3 w-3" /> Medium
+                        </Badge>
+                      )}
+                      <Badge variant={urgencyColor(a) as any} className="text-xs">
+                        {a.due_date ? (
+                          isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                          isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                          new Date(a.due_date).toLocaleDateString()
+                        ) : "No due date"}
                       </Badge>
-                    )}
-                    <Badge variant={urgencyColor(a) as any} className="text-xs">
-                      {a.due_date ? new Date(a.due_date).toLocaleDateString() : "No due date"}
-                    </Badge>
+                    </div>
+                    <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
+                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
                   </div>
-                  <p className="mt-1.5 font-medium">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
-                </div>
-                <Button variant="ghost" size="sm" asChild className="rounded-xl">
-                  <Link to={`/student/courses/${a.course_id}?tab=assignments`}>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <Button variant="ghost" size="sm" asChild className="rounded-xl">
+                    <Link to={`/student/courses/${a.course_id}?tab=assignments`}>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
