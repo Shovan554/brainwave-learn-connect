@@ -16,6 +16,7 @@ import {
   Film,
   Sun,
   Moon,
+  Compass,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
