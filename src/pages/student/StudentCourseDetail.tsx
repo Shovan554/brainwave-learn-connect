@@ -259,11 +259,29 @@ export default function StudentCourseDetail() {
               {syllabusFiles.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No syllabus files uploaded yet</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {syllabusFiles.map((f) => (
-                    <a key={f.id} href={f.file_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-muted">
-                      <FileText className="h-4 w-4 text-primary" /> {f.file_name}
-                    </a>
+                    <div key={f.id} className="space-y-3">
+                      <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <FileText className="h-4 w-4 text-primary" /> {f.file_name}
+                        </div>
+                        <Button variant="outline" size="sm" asChild className="h-7 gap-1 text-xs">
+                          <a href={f.file_url} target="_blank" rel="noreferrer" download><Download className="h-3 w-3" /> Download</a>
+                        </Button>
+                      </div>
+                      {f.file_name && /\.pdf$/i.test(f.file_name) && (
+                        <iframe
+                          src={`https://docs.google.com/gview?url=${encodeURIComponent(f.file_url)}&embedded=true`}
+                          className="w-full rounded-lg border bg-muted/30"
+                          style={{ height: "calc(100vh - 340px)", minHeight: "400px" }}
+                          title={`Preview ${f.file_name}`}
+                        />
+                      )}
+                      {f.file_name && /\.(png|jpg|jpeg|gif|webp)$/i.test(f.file_name) && (
+                        <img src={f.file_url} alt={f.file_name} className="w-full max-h-[600px] object-contain rounded-lg border bg-muted/30" />
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
