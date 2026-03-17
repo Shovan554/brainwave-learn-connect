@@ -125,12 +125,18 @@ export default function TeacherDashboard() {
           <h1 className="text-2xl font-bold tracking-tight">Teacher Dashboard</h1>
           <p className="text-muted-foreground">Manage your courses and students</p>
         </div>
-        <Button asChild>
-          <Link to="/teacher/courses/new">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Course
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={analyzeStudents} disabled={analyzing} className="gap-2">
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Analyze Students
+          </Button>
+          <Button asChild>
+            <Link to="/teacher/courses/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Course
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">
