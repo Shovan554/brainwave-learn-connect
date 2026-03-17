@@ -15,6 +15,7 @@ import CourseDetail from "./pages/teacher/CourseDetail";
 import GradeAssignment from "./pages/teacher/GradeAssignment";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
+import StudentAssignment from "./pages/student/StudentAssignment";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
 import StudentGrades from "./pages/student/StudentGrades";
@@ -54,6 +55,7 @@ const App = () => (
             {/* Student routes */}
             <Route path="/student/dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/courses/:id" element={<ProtectedRoute requiredRole="student"><StudentCourseDetail /></ProtectedRoute>} />
+            <Route path="/student/courses/:courseId/assignments/:assignmentId" element={<ProtectedRoute requiredRole="student"><StudentAssignment /></ProtectedRoute>} />
             <Route path="/student/readings" element={<ProtectedRoute requiredRole="student"><MyReadings /></ProtectedRoute>} />
             <Route path="/student/grades" element={<ProtectedRoute requiredRole="student"><StudentGrades /></ProtectedRoute>} />
             <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
