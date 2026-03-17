@@ -340,13 +340,14 @@ export default function StudentDashboard() {
                           <span className="text-sm">{emoji}</span>
                         </div>
                       </div>
-                      <div className="relative h-3 rounded-full bg-muted/60 overflow-hidden">
+                      <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
                         <div
                           className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
                           style={{
-                            width: `${pct}%`,
-                            background: `linear-gradient(90deg, ${color}CC, ${color})`,
-                            boxShadow: `0 0 12px ${color}40`,
+                            width: `${Math.max(pct, 2)}%`,
+                            backgroundColor: color,
+                            boxShadow: `0 0 10px 1px ${color}`,
+                            opacity: 0.9,
                           }}
                         />
                       </div>
