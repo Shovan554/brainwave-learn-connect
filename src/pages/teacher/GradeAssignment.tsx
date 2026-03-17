@@ -207,26 +207,34 @@ export default function GradeAssignment() {
                 </div>
               )}
 
-              {/* File attachment */}
+              {/* File attachment - inline preview */}
               {currentSub?.file_url && (
                 <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Attached File</p>
-                  <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Attached File</p>
+                    <Button variant="outline" size="sm" asChild className="h-7 gap-1 text-xs">
+                      <a href={currentSub.file_url} target="_blank" rel="noreferrer" download><Download className="h-3 w-3" /> Download</a>
+                    </Button>
+                  </div>
+                  {currentSub.file_name && /\.pdf$/i.test(currentSub.file_name) ? (
+                    <iframe
+                      src={currentSub.file_url}
+                      className="w-full rounded-lg border bg-muted/30"
+                      style={{ height: "400px" }}
+                      title="PDF Preview"
+                    />
+                  ) : currentSub.file_name && /\.(png|jpg|jpeg|gif|webp)$/i.test(currentSub.file_name) ? (
+                    <img
+                      src={currentSub.file_url}
+                      alt={currentSub.file_name}
+                      className="w-full max-h-[400px] object-contain rounded-lg border bg-muted/30"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
                       <FileText className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">{currentSub.file_name || "File"}</span>
                     </div>
-                    <div className="flex gap-1">
-                      {currentSub.file_name && /\.(pdf|png|jpg|jpeg|gif|webp)$/i.test(currentSub.file_name) && (
-                        <Button variant="ghost" size="sm" asChild className="h-7 gap-1 text-xs">
-                          <a href={currentSub.file_url} target="_blank" rel="noreferrer"><Eye className="h-3 w-3" /> Preview</a>
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" asChild className="h-7 gap-1 text-xs">
-                        <a href={currentSub.file_url} target="_blank" rel="noreferrer" download><Download className="h-3 w-3" /> Download</a>
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
