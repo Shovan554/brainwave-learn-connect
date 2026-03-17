@@ -51,7 +51,12 @@ export function AIDashboardInsight({ userToken }: Props) {
           ) : insight ? (
             <p className="text-sm text-foreground/90 leading-relaxed">{insight}</p>
           ) : (
-            <p className="text-sm text-muted-foreground">Unable to load suggestions right now.</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">Click to get personalized advice</p>
+              <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs" onClick={fetchInsight}>
+                <Sparkles className="h-3 w-3" /> Generate Advice
+              </Button>
+            </div>
           )}
         </div>
         <div className="shrink-0 flex items-center gap-1">
