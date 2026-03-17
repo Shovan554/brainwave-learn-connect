@@ -56,6 +56,7 @@ export default function CourseDetail() {
   const [uploadingAssignmentFile, setUploadingAssignmentFile] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [newAssignmentFiles, setNewAssignmentFiles] = useState<File[]>([]);
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
@@ -287,12 +288,28 @@ export default function CourseDetail() {
   };
 
   const addAssignment = async () => {
-    if (!id) return;
-    const { error } = await supabase.from("assignments").insert({
+    if (!id || !user) return;
+    const { data: created, error } = await supabase.from("assignments").insert({
       course_id: id, ...newAssignment, due_date: newAssignment.due_date || null,
-    });
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }).select().single();
+    if (error || !created) { toast({ title: "Error", description: error?.message, variant: "destructive" }); return; }
+
+    // Upload attached files
+    for (const file of newAssignmentFiles) {
+      const filePath = `${user.id}/${id}/assignments/${created.id}/${Date.now()}_${file.name}`;
+      const { error: uploadErr } = await supabase.storage.from("course-files").upload(filePath, file);
+      if (!uploadErr) {
+        const { data: urlData } = supabase.storage.from("course-files").getPublicUrl(filePath);
+        await supabase.from("assignment_assets").insert({
+          assignment_id: created.id,
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+        });
+      }
+    }
+
     setNewAssignment({ title: "", description: "", due_date: "", points: 0, weight: 0, estimated_time_minutes: 30 });
+    setNewAssignmentFiles([]);
     loadCourse();
   };
 
@@ -583,6 +600,24 @@ export default function CourseDetail() {
                   <div className="space-y-1"><Label className="text-xs">Points</Label><Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: +e.target.value })} /></div>
                   <div className="space-y-1"><Label className="text-xs">Weight %</Label><Input type="number" value={newAssignment.weight} onChange={(e) => setNewAssignment({ ...newAssignment, weight: +e.target.value })} /></div>
                   <div className="space-y-1"><Label className="text-xs">Est. Minutes</Label><Input type="number" value={newAssignment.estimated_time_minutes} onChange={(e) => setNewAssignment({ ...newAssignment, estimated_time_minutes: +e.target.value })} /></div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Attach Files (optional)</Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Label htmlFor="new-assign-files" className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                      <Upload className="h-3 w-3" /> Choose Files
+                    </Label>
+                    <input id="new-assign-files" type="file" multiple className="hidden" onChange={(e) => {
+                      if (e.target.files) setNewAssignmentFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                    }} />
+                    {newAssignmentFiles.map((f, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
+                        <FileText className="h-3 w-3" />
+                        <span className="max-w-[120px] truncate">{f.name}</span>
+                        <button onClick={() => setNewAssignmentFiles(prev => prev.filter((_, j) => j !== i))} className="ml-0.5 hover:text-destructive">×</button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <Button size="sm" onClick={addAssignment} disabled={!newAssignment.title}><Plus className="mr-2 h-3 w-3" /> Create Assignment</Button>
               </CardContent>
