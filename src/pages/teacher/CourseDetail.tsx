@@ -605,11 +605,35 @@ export default function CourseDetail() {
                       <Badge variant="outline" className="text-xs">{(submissions[a.id] || []).length} submissions</Badge>
                       <Badge variant={a.is_published ? "default" : "secondary"}>{a.is_published ? "Published" : "Draft"}</Badge>
                       <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditingAssignment(a)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteAssignment(a.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
+
+                  {/* Inline Edit Form */}
+                  {editingAssignment === a.id && (
+                    <div className="mt-4 space-y-3 border-t pt-4 bg-muted/30 rounded-lg p-4 -mx-0">
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Edit Assignment</p>
+                      <Input placeholder="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+                      <Textarea placeholder="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2} />
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="space-y-1"><Label className="text-xs">Due Date</Label><Input type="datetime-local" value={editForm.due_date} onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })} /></div>
+                        <div className="space-y-1"><Label className="text-xs">Points</Label><Input type="number" value={editForm.points} onChange={(e) => setEditForm({ ...editForm, points: +e.target.value })} /></div>
+                        <div className="space-y-1"><Label className="text-xs">Weight %</Label><Input type="number" value={editForm.weight} onChange={(e) => setEditForm({ ...editForm, weight: +e.target.value })} /></div>
+                        <div className="space-y-1"><Label className="text-xs">Est. Minutes</Label><Input type="number" value={editForm.estimated_time_minutes} onChange={(e) => setEditForm({ ...editForm, estimated_time_minutes: +e.target.value })} /></div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => saveAssignmentEdit(a.id)} disabled={!editForm.title} className="gap-1">
+                          <Save className="h-3 w-3" /> Save Changes
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingAssignment(null)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
 
                   {expandedAssignment === a.id && (
                     <div className="mt-4 space-y-4 border-t pt-4">
