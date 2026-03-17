@@ -49,7 +49,7 @@ interface CourseGrade {
 }
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
