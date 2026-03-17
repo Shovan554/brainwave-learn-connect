@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ExternalLink, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, ExternalLink, User, ArrowLeft } from "lucide-react";
 
 export default function PublicProfile() {
   const { studentId } = useParams<{ studentId: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,9 @@ export default function PublicProfile() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-2xl">
+        <Button variant="ghost" size="sm" className="gap-2 mb-4 rounded-xl" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
         <div className="mb-6 flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
             {profile.name?.charAt(0)?.toUpperCase() || <User className="h-6 w-6" />}
