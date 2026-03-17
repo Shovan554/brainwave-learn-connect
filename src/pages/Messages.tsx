@@ -361,31 +361,92 @@ export default function Messages() {
               <DialogTrigger asChild>
                 <Button size="icon" variant="ghost"><Plus className="h-5 w-5" /></Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle>New Conversation</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search users..." className="pl-9" value={searchUsers} onChange={e => searchForUsers(e.target.value)} />
-                  </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1">
-                    {foundUsers.map(u => (
-                      <button
-                        key={u.user_id}
-                        onClick={() => startConversation(u.user_id)}
-                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent text-left transition-colors"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{u.name}</p>
-                          {u.major && <p className="text-xs text-muted-foreground">{u.major}</p>}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <Tabs defaultValue="dm" className="w-full">
+                  <TabsList className="w-full mb-3">
+                    <TabsTrigger value="dm" className="flex-1 gap-1.5"><Send className="h-3.5 w-3.5" /> Direct</TabsTrigger>
+                    <TabsTrigger value="group" className="flex-1 gap-1.5"><Users className="h-3.5 w-3.5" /> Group</TabsTrigger>
+                  </TabsList>
+
+                  {/* Direct Message Tab */}
+                  <TabsContent value="dm" className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Search users..." className="pl-9 rounded-xl" value={searchUsers} onChange={e => searchForUsers(e.target.value)} />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {foundUsers.map(u => (
+                        <button
+                          key={u.user_id}
+                          onClick={() => startConversation(u.user_id)}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent text-left transition-colors"
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{u.name}</p>
+                            {u.major && <p className="text-xs text-muted-foreground">{u.major}</p>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  {/* Group Chat Tab */}
+                  <TabsContent value="group" className="space-y-3">
+                    {/* Selected members */}
+                    {groupMembers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {groupMembers.map(m => (
+                          <Badge key={m.user_id} variant="secondary" className="gap-1 pr-1 rounded-lg">
+                            {m.name}
+                            <button onClick={() => toggleGroupMember(m)} className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Search users to add..." className="pl-9 rounded-xl" value={groupSearch} onChange={e => searchGroupUsers(e.target.value)} />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {groupSearchResults.map(u => {
+                        const isSelected = groupMembers.some(m => m.user_id === u.user_id);
+                        return (
+                          <button
+                            key={u.user_id}
+                            onClick={() => toggleGroupMember({ user_id: u.user_id, name: u.name })}
+                            className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${isSelected ? "bg-primary/10" : "hover:bg-accent"}`}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{u.name}</p>
+                              {u.major && <p className="text-xs text-muted-foreground">{u.major}</p>}
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      onClick={createGroupChat}
+                      disabled={groupMembers.length < 2 || creatingGroup}
+                      className="w-full rounded-xl"
+                    >
+                      {creatingGroup ? "Creating..." : `Create Group (${groupMembers.length} members)`}
+                    </Button>
+                    {groupMembers.length < 2 && groupMembers.length > 0 && (
+                      <p className="text-xs text-muted-foreground text-center">Add at least 2 members to create a group</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>
