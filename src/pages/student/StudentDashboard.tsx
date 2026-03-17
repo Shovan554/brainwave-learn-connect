@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { AIDashboardInsight } from "@/components/AIDashboardInsight";
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
