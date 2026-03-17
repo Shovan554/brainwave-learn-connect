@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, Save, Camera } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export default function StudentProfile() {
   const { user } = useAuth();
