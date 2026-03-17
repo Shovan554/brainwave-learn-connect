@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
 import {
   Loader2, FileText, Calendar, Clock, Users, Flag,
-  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder,
+  ExternalLink, Upload, ChevronDown, ChevronUp, CheckCircle, Brain, Folder, Download, Eye,
 } from "lucide-react";
 import { AssetSummaryDialog } from "@/components/AssetSummaryDialog";
 
