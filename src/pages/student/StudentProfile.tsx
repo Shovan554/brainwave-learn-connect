@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, ExternalLink, Save, Camera, Heart, MessageCircle, Image as ImageIcon, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function StudentProfile() {
@@ -23,6 +25,14 @@ export default function StudentProfile() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [newProject, setNewProject] = useState({ title: "", description: "", github_url: "", tech_stack: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Comments state
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [sendingComment, setSendingComment] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -104,6 +114,61 @@ export default function StudentProfile() {
     await supabase.from("posts").delete().eq("id", postId);
     setMyPosts(prev => prev.filter(p => p.id !== postId));
     toast({ title: "Post deleted" });
+  };
+
+  const openComments = async (postId: string) => {
+    setCommentsPostId(postId);
+    setCommentsOpen(true);
+    setLoadingComments(true);
+    const { data } = await supabase
+      .from("post_comments")
+      .select("*")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      const authorIds = [...new Set(data.map((c: any) => c.author_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", authorIds);
+      const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p]) || []);
+      setComments(data.map((c: any) => ({
+        ...c,
+        author_name: profileMap[c.author_id]?.name || "User",
+        author_avatar: profileMap[c.author_id]?.avatar_url || null,
+      })));
+    }
+    setLoadingComments(false);
+  };
+
+  const sendComment = async () => {
+    if (!user || !commentsPostId || !newComment.trim()) return;
+    setSendingComment(true);
+    try {
+      const { data } = await supabase
+        .from("post_comments")
+        .insert({ post_id: commentsPostId, author_id: user.id, content: newComment.trim() })
+        .select()
+        .single();
+      if (data) {
+        setComments(prev => [...prev, { ...data, author_name: profile.name || "You", author_avatar: profile.avatar_url || null }]);
+        setMyPosts(prev => prev.map(p => p.id === commentsPostId ? { ...p, comments_count: p.comments_count + 1 } : p));
+      }
+      setNewComment("");
+    } catch {
+      toast({ title: "Failed to post comment", variant: "destructive" });
+    } finally {
+      setSendingComment(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    await supabase.from("post_comments").delete().eq("id", commentId);
+    setComments(prev => prev.filter(c => c.id !== commentId));
+    if (commentsPostId) {
+      setMyPosts(prev => prev.map(p => p.id === commentsPostId ? { ...p, comments_count: Math.max(0, p.comments_count - 1) } : p));
+    }
   };
 
   const deleteProject = async (id: string) => {
@@ -216,25 +281,27 @@ export default function StudentProfile() {
             {myPosts.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">You haven't posted anything yet.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {myPosts.map(post => (
-                  <div key={post.id} className="flex items-start justify-between rounded-xl border p-4 gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
-                      {post.image_url && (
-                        <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                          <ImageIcon className="h-3 w-3" /> Image attached
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <div key={post.id} className="rounded-xl border overflow-hidden">
+                    <div className="p-4">
+                      <p className="text-sm whitespace-pre-wrap">{post.content}</p>
+                    </div>
+                    {post.image_url && (
+                      <img src={post.image_url} alt="Post" className="w-full max-h-[300px] object-cover" />
+                    )}
+                    <div className="flex items-center justify-between px-4 py-2 border-t border-border/50">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Heart className="h-3 w-3" /> {post.likes_count}</span>
-                        <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {post.comments_count}</span>
+                        <button onClick={() => openComments(post.id)} className="flex items-center gap-1 hover:text-primary transition-colors">
+                          <MessageCircle className="h-3 w-3" /> {post.comments_count}
+                        </button>
                         <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                       </div>
+                      <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -242,6 +309,65 @@ export default function StudentProfile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Comments Dialog */}
+      <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Comments</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {loadingComments ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No comments yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {comments.map(c => (
+                  <div key={c.id} className="flex gap-2.5 group">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={c.author_avatar || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {c.author_name?.charAt(0)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="bg-muted rounded-xl px-3 py-2">
+                        <p className="text-xs font-semibold">{c.author_name}</p>
+                        <p className="text-sm">{c.content}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 px-1">
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                        </span>
+                        {c.author_id === user?.id && (
+                          <button onClick={() => deleteComment(c.id)} className="text-[10px] text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+          <div className="flex gap-2 mt-2">
+            <Input
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={e => setNewComment(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendComment(); } }}
+              className="rounded-xl"
+            />
+            <Button size="icon" onClick={sendComment} disabled={sendingComment || !newComment.trim()} className="rounded-xl shrink-0">
+              {sendingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
