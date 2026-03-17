@@ -99,6 +99,13 @@ export default function StudentProfile() {
     loadData();
   };
 
+  const deletePost = async (postId: string) => {
+    if (!confirm("Delete this post?")) return;
+    await supabase.from("posts").delete().eq("id", postId);
+    setMyPosts(prev => prev.filter(p => p.id !== postId));
+    toast({ title: "Post deleted" });
+  };
+
   const deleteProject = async (id: string) => {
     await supabase.from("project_portfolios").delete().eq("id", id);
     loadData();
