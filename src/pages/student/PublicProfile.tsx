@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ExternalLink, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, ExternalLink, User, ArrowLeft } from "lucide-react";
 
 export default function PublicProfile() {
   const { studentId } = useParams<{ studentId: string }>();
