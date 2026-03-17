@@ -637,7 +637,11 @@ export default function CourseDetail() {
                       </div>
                     </button>
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-xs">{(submissions[a.id] || []).length} submissions</Badge>
+                      <Button variant="outline" size="sm" className="text-xs gap-1" asChild>
+                        <Link to={`/teacher/courses/${id}/assignments/${a.id}/grade`}>
+                          {(submissions[a.id] || []).length} submissions
+                        </Link>
+                      </Button>
                       <Badge variant={a.is_published ? "default" : "secondary"}>{a.is_published ? "Published" : "Draft"}</Badge>
                       <Switch checked={a.is_published} onCheckedChange={() => toggleAssignmentPublish(a.id, a.is_published)} />
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditingAssignment(a)}>
