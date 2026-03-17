@@ -225,6 +225,61 @@ export default function Messages() {
     loadConversations();
   };
 
+  const searchGroupUsers = async (query: string) => {
+    setGroupSearch(query);
+    if (query.length < 2) { setGroupSearchResults([]); return; }
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, name, major")
+      .ilike("name", `%${query}%`)
+      .neq("user_id", user?.id || "")
+      .limit(10);
+    setGroupSearchResults(data || []);
+  };
+
+  const toggleGroupMember = (u: { user_id: string; name: string }) => {
+    setGroupMembers(prev =>
+      prev.some(m => m.user_id === u.user_id)
+        ? prev.filter(m => m.user_id !== u.user_id)
+        : [...prev, u]
+    );
+  };
+
+  const createGroupChat = async () => {
+    if (!user || groupMembers.length < 2) return;
+    setCreatingGroup(true);
+    try {
+      const convoId = crypto.randomUUID();
+      const { error } = await supabase.from("conversations").insert({ id: convoId });
+      if (error) throw error;
+
+      await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: user.id });
+
+      for (const member of groupMembers) {
+        await supabase.from("conversation_participants").insert({ conversation_id: convoId, user_id: member.user_id });
+      }
+
+      const names = groupMembers.map(m => m.name).join(", ");
+      await supabase.from("messages").insert({
+        conversation_id: convoId,
+        sender_id: user.id,
+        content: `👥 Group created with ${names}`,
+      });
+
+      setSelectedConvo(convoId);
+      setNewChatOpen(false);
+      setGroupMembers([]);
+      setGroupSearch("");
+      setGroupSearchResults([]);
+      loadConversations();
+      toast.success("Group created!");
+    } catch {
+      toast.error("Failed to create group");
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
   const sendMessage = async () => {
     if (!user || !selectedConvo || (!newMessage.trim() && !attachments.length)) return;
     setSending(true);
