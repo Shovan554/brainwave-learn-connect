@@ -18,6 +18,7 @@ export default function StudentProfile() {
   const { toast } = useToast();
   const [profile, setProfile] = useState({ name: "", bio: "", major: "", avatar_url: "" });
   const [projects, setProjects] = useState<any[]>([]);
+  const [myPosts, setMyPosts] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [newProject, setNewProject] = useState({ title: "", description: "", github_url: "", tech_stack: "" });
