@@ -9,6 +9,7 @@ import {
   User,
   LogOut,
   Brain,
+  GraduationCap,
   ChevronDown,
   ChevronRight,
   MessageCircle,
