@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -7,9 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles, GraduationCap, AlertTriangle, Flame } from "lucide-react";
+import {
+  BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
+  GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
+  Calendar, Trophy, TrendingUp, X,
+} from "lucide-react";
 
 interface PrioritizedAssignment {
   id: string;
@@ -23,14 +30,38 @@ interface PrioritizedAssignment {
   priority_score: number;
 }
 
+interface PastDueAssignment {
+  id: string;
+  title: string;
+  course_title: string;
+  course_id: string;
+  due_date: string;
+  points: number;
+}
+
+interface CourseGrade {
+  course_id: string;
+  course_title: string;
+  percentage: number | null;
+  earned: number;
+  total: number;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<PrioritizedAssignment[]>([]);
+  const [pastDue, setPastDue] = useState<PastDueAssignment[]>([]);
+  const [courseGrades, setCourseGrades] = useState<CourseGrade[]>([]);
+  const [submittedCount, setSubmittedCount] = useState(0);
+  const [totalAssignments, setTotalAssignments] = useState(0);
   const [inviteCode, setInviteCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pastDueOpen, setPastDueOpen] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -47,34 +78,81 @@ export default function StudentDashboard() {
     const courseList = enrollments?.map((e: any) => e.courses).filter(Boolean) || [];
     setCourses(courseList);
 
-    // Get all assignments from enrolled courses
-    if (courseList.length > 0) {
-      const courseIds = courseList.map((c: any) => c.id);
-      const { data: assignData } = await supabase
-        .from("assignments")
-        .select("*")
-        .in("course_id", courseIds)
-        .eq("is_published", true);
-
-      if (assignData) {
-        const now = Date.now();
-        const prioritized: PrioritizedAssignment[] = assignData
-          .filter((a: any) => {
-            // Only show assignments that are not past due (or have no due date)
-            if (!a.due_date) return true;
-            return new Date(a.due_date).getTime() > now;
-          })
-          .map((a: any) => {
-            const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
-            const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
-            const urgency = Math.max(1, (dueMs - now) / (1000 * 60 * 60));
-            const score = ((a.weight || 1) * (a.points || 1)) / (urgency * Math.max(1, a.estimated_time_minutes || 30));
-            return { ...a, course_title: courseName, priority_score: score };
-          })
-          .sort((a: PrioritizedAssignment, b: PrioritizedAssignment) => b.priority_score - a.priority_score);
-        setAssignments(prioritized);
-      }
+    if (courseList.length === 0) {
+      setAssignments([]);
+      setPastDue([]);
+      setCourseGrades([]);
+      return;
     }
+
+    const courseIds = courseList.map((c: any) => c.id);
+
+    // Get all assignments + submissions in parallel
+    const [assignRes, subRes] = await Promise.all([
+      supabase.from("assignments").select("*").in("course_id", courseIds).eq("is_published", true),
+      supabase.from("assignment_submissions").select("assignment_id, grade, graded_at").eq("student_id", user!.id),
+    ]);
+
+    const allAssignments = assignRes.data || [];
+    const allSubmissions = subRes.data || [];
+    const submittedIds = new Set(allSubmissions.map(s => s.assignment_id));
+
+    setTotalAssignments(allAssignments.length);
+    setSubmittedCount(submittedIds.size);
+
+    const now = Date.now();
+
+    // Past due (not submitted)
+    const pastDueList: PastDueAssignment[] = allAssignments
+      .filter(a => a.due_date && new Date(a.due_date).getTime() < now && !submittedIds.has(a.id))
+      .map(a => ({
+        id: a.id,
+        title: a.title,
+        course_title: courseList.find((c: any) => c.id === a.course_id)?.title || "",
+        course_id: a.course_id,
+        due_date: a.due_date!,
+        points: a.points || 0,
+      }))
+      .sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
+    setPastDue(pastDueList);
+
+    // Upcoming (not past due)
+    const prioritized: PrioritizedAssignment[] = allAssignments
+      .filter(a => {
+        if (!a.due_date) return true;
+        return new Date(a.due_date).getTime() > now;
+      })
+      .map(a => {
+        const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
+        const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
+        const urgency = Math.max(1, (dueMs - now) / (1000 * 60 * 60));
+        const score = ((a.weight || 1) * (a.points || 1)) / (urgency * Math.max(1, a.estimated_time_minutes || 30));
+        return { ...a, course_title: courseName, priority_score: score };
+      })
+      .sort((a, b) => b.priority_score - a.priority_score);
+    setAssignments(prioritized);
+
+    // Course grades
+    const grades: CourseGrade[] = courseList.map((course: any) => {
+      const courseAssignments = allAssignments.filter(a => a.course_id === course.id);
+      const graded = courseAssignments
+        .map(a => {
+          const sub = allSubmissions.find(s => s.assignment_id === a.id);
+          return sub?.grade != null ? { grade: sub.grade, points: a.points || 0 } : null;
+        })
+        .filter(Boolean) as { grade: number; points: number }[];
+
+      const earned = graded.reduce((s, g) => s + g.grade, 0);
+      const total = graded.reduce((s, g) => s + g.points, 0);
+      return {
+        course_id: course.id,
+        course_title: course.title,
+        percentage: total > 0 ? (earned / total) * 100 : null,
+        earned,
+        total,
+      };
+    });
+    setCourseGrades(grades);
   };
 
   const joinCourse = async () => {
@@ -112,6 +190,12 @@ export default function StudentDashboard() {
     return "secondary";
   };
 
+  const overallGpa = (() => {
+    const withGrades = courseGrades.filter(c => c.percentage !== null);
+    if (withGrades.length === 0) return null;
+    return withGrades.reduce((s, c) => s + c.percentage!, 0) / withGrades.length;
+  })();
+
   return (
     <DashboardLayout>
       <div className="mb-8 flex items-center justify-between">
@@ -139,6 +223,165 @@ export default function StudentDashboard() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* ── Metrics Strip ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        {/* Past Due */}
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${pastDue.length > 0 ? "border-destructive/40" : ""}`}
+          onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
+        >
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <FileWarning className={`h-5 w-5 ${pastDue.length > 0 ? "text-destructive" : "text-muted-foreground"}`} />
+              {pastDue.length > 0 && <Badge variant="destructive" className="text-[10px] px-1.5">{pastDue.length}</Badge>}
+            </div>
+            <span className="text-2xl font-bold">{pastDue.length}</span>
+            <span className="text-xs text-muted-foreground">Past Due</span>
+          </CardContent>
+        </Card>
+
+        {/* Assignments Due */}
+        <Card
+          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          onClick={() => assignments.length > 0 && setDueOpen(true)}
+        >
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <Calendar className="h-5 w-5 text-primary" />
+              {assignments.length > 0 && <Badge variant="secondary" className="text-[10px] px-1.5">{assignments.length}</Badge>}
+            </div>
+            <span className="text-2xl font-bold">{assignments.length}</span>
+            <span className="text-xs text-muted-foreground">Due Soon</span>
+          </CardContent>
+        </Card>
+
+        {/* Submitted */}
+        <Card className="transition-all hover:shadow-md hover:-translate-y-0.5">
+          <CardContent className="p-4 flex flex-col gap-1">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span className="text-2xl font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
+            <span className="text-xs text-muted-foreground">Submitted</span>
+          </CardContent>
+        </Card>
+
+        {/* Overall Grade */}
+        <Card
+          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          onClick={() => navigate("/student/grades")}
+        >
+          <CardContent className="p-4 flex flex-col gap-1">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            <span className="text-2xl font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
+            <span className="text-xs text-muted-foreground">Overall Grade</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Course Grade Bars ── */}
+      {courseGrades.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Course Grades</h2>
+          </div>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              {courseGrades.map(cg => (
+                <div
+                  key={cg.course_id}
+                  className="cursor-pointer group"
+                  onClick={() => navigate("/student/grades")}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">{cg.course_title}</span>
+                    <span className="text-sm font-semibold">
+                      {cg.percentage !== null ? `${cg.percentage.toFixed(1)}%` : "No grades"}
+                    </span>
+                  </div>
+                  <Progress
+                    value={cg.percentage ?? 0}
+                    className="h-2.5"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Past Due Dialog ── */}
+      <Dialog open={pastDueOpen} onOpenChange={setPastDueOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileWarning className="h-5 w-5 text-destructive" /> Past Due Assignments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {pastDue.map(a => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-3 cursor-pointer hover:bg-destructive/10 transition-colors"
+                onClick={() => { setPastDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{a.title}</p>
+                  <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts</p>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <Badge variant="destructive" className="text-[10px]">
+                    {new Date(a.due_date).toLocaleDateString()}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+            {pastDue.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No past due assignments 🎉</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Due Soon Dialog ── */}
+      <Dialog open={dueOpen} onOpenChange={setDueOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" /> Upcoming Assignments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {assignments.map(a => {
+              const hours = a.due_date ? (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) : null;
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => { setDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{a.title}</p>
+                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                  </div>
+                  <Badge variant={urgencyColor(a) as any} className="text-[10px] shrink-0 ml-3">
+                    {a.due_date
+                      ? hours !== null && hours < 24
+                        ? `${Math.max(1, Math.round(hours))}h`
+                        : hours !== null && hours < 72
+                        ? `${Math.round(hours / 24)}d`
+                        : new Date(a.due_date).toLocaleDateString()
+                      : "No date"}
+                  </Badge>
+                </div>
+              );
+            })}
+            {assignments.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No upcoming assignments 🎉</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Priority Queue */}
       <div className="mb-3 flex items-center gap-2">
