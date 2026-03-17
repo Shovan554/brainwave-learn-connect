@@ -93,6 +93,111 @@ export default function StudentAssignment() {
 
   const isPastDue = assignment?.due_date && new Date(assignment.due_date) < new Date();
 
+  // AI Help state
+  type AiMsg = { role: "user" | "assistant"; content: string };
+  const [aiMessages, setAiMessages] = useState<AiMsg[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const aiScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (aiScrollRef.current) {
+      aiScrollRef.current.scrollTop = aiScrollRef.current.scrollHeight;
+    }
+  }, [aiMessages]);
+
+  const buildAssignmentContext = (): string => {
+    let ctx = `[Assignment Context]\nTitle: ${assignment?.title}\nDescription: ${assignment?.description || "None"}\nDue: ${assignment?.due_date ? new Date(assignment.due_date).toLocaleString() : "TBD"}\nPoints: ${assignment?.points} | Weight: ${assignment?.weight}%`;
+    if (assignment?.estimated_time_minutes) ctx += `\nEstimated time: ~${assignment.estimated_time_minutes} min`;
+    if (assets.length) ctx += `\nAttached files: ${assets.map((a: any) => a.file_name || a.link_url).join(", ")}`;
+    return ctx;
+  };
+
+  const sendAiMessage = async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    const userMsg: AiMsg = { role: "user", content: aiInput.trim() };
+    const allMessages = [...aiMessages, userMsg];
+    setAiMessages(allMessages);
+    setAiInput("");
+    setAiLoading(true);
+
+    // Prepend assignment context to the first user message
+    const messagesForApi = allMessages.map((m, i) => {
+      if (i === 0 && m.role === "user") {
+        return { role: m.role, content: `${buildAssignmentContext()}\n\nStudent question: ${m.content}` };
+      }
+      return m;
+    });
+
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-copilot`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: messagesForApi,
+          courseId,
+          action: "student",
+          userToken: token,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        toast({ title: "AI Error", description: errData.error || "Failed to get response", variant: "destructive" });
+        setAiLoading(false);
+        return;
+      }
+
+      const reader = resp.body?.getReader();
+      if (!reader) { setAiLoading(false); return; }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let assistantSoFar = "";
+
+      const upsertAssistant = (text: string) => {
+        assistantSoFar = text;
+        setAiMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") {
+            return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: text } : m);
+          }
+          return [...prev, { role: "assistant", content: text }];
+        });
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, nl);
+          buffer = buffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(json);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) upsertAssistant(assistantSoFar + content);
+          } catch { /* partial */ }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Failed to reach AI assistant", variant: "destructive" });
+    }
+    setAiLoading(false);
+  };
+
   if (loading) {
     return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
   }
@@ -218,7 +323,7 @@ export default function StudentAssignment() {
           )}
         </div>
 
-        {/* Right: Submission / Grade panel */}
+        {/* Right: Submission / Grade panel + AI Help */}
         <div className="space-y-6">
           {submission ? (
             <>
@@ -341,6 +446,84 @@ export default function StudentAssignment() {
               </CardContent>
             </Card>
           )}
+
+          {/* AI Assignment Helper */}
+          <Card className="border-primary/30">
+            <CardHeader className="pb-2 cursor-pointer" onClick={() => setAiOpen(!aiOpen)}>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                AI Assignment Helper
+                <Badge variant="secondary" className="ml-auto text-[10px]">
+                  {aiOpen ? "Collapse" : "Expand"}
+                </Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Ask for help understanding this assignment</p>
+            </CardHeader>
+            {aiOpen && (
+              <CardContent className="space-y-3 pt-0">
+                {/* Messages */}
+                {aiMessages.length > 0 && (
+                  <div ref={aiScrollRef} className="max-h-[350px] overflow-y-auto space-y-3 rounded-lg border bg-muted/20 p-3">
+                    {aiMessages.map((msg, i) => (
+                      <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        {msg.role === "assistant" && <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />}
+                        <div className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${
+                          msg.role === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card border"
+                        }`}>
+                          {msg.role === "assistant" ? (
+                            <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1 [&>ul]:my-1">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                          ) : msg.content}
+                        </div>
+                      </div>
+                    ))}
+                    {aiLoading && !aiMessages.find((m, i) => i === aiMessages.length - 1 && m.role === "assistant") && (
+                      <div className="flex gap-2">
+                        <Bot className="h-5 w-5 text-primary shrink-0" />
+                        <div className="rounded-lg border bg-card px-3 py-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Input */}
+                <form
+                  onSubmit={(e) => { e.preventDefault(); sendAiMessage(); }}
+                  className="flex gap-2"
+                >
+                  <Input
+                    placeholder="e.g. Help me understand this assignment..."
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    disabled={aiLoading}
+                    className="flex-1 text-sm"
+                  />
+                  <Button type="submit" size="sm" disabled={aiLoading || !aiInput.trim()} className="gap-1 shrink-0">
+                    {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  </Button>
+                </form>
+
+                {aiMessages.length === 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Explain this assignment", "Give me an outline to start", "What concepts should I review?"].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => { setAiInput(q); }}
+                        className="rounded-full border px-3 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
         </div>
       </div>
     </DashboardLayout>
