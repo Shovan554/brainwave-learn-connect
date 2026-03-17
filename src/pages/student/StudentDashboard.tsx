@@ -120,6 +120,7 @@ export default function StudentDashboard() {
     // Upcoming (not past due)
     const prioritized: PrioritizedAssignment[] = allAssignments
       .filter(a => {
+        if (submittedIds.has(a.id)) return false;
         if (!a.due_date) return true;
         return new Date(a.due_date).getTime() > now;
       })
