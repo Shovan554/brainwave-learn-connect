@@ -464,10 +464,16 @@ export default function Messages() {
                   onClick={() => setSelectedConvo(c.id)}
                   className="flex items-center gap-3 flex-1 min-w-0"
                 >
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                  </Avatar>
+                  {c.participants.length > 1 ? (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                  ) : (
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={c.participants[0]?.avatar_url || undefined} alt={c.participants[0]?.name} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm">{c.participants[0]?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-sm font-medium truncate text-left">{c.participants.map(p => p.name).join(", ") || "Conversation"}</p>
                     <p className="text-xs text-muted-foreground truncate text-left max-w-[160px]">{c.lastMessage || "No messages yet"}</p>
