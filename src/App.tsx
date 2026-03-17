@@ -15,6 +15,7 @@ import CourseDetail from "./pages/teacher/CourseDetail";
 import GradeAssignment from "./pages/teacher/GradeAssignment";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
+import StudentAssignment from "./pages/student/StudentAssignment";
 import MyReadings from "./pages/student/MyReadings";
 import StudentProfile from "./pages/student/StudentProfile";
 import StudentGrades from "./pages/student/StudentGrades";
