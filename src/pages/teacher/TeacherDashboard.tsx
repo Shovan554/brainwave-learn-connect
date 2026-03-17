@@ -6,7 +6,11 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Users, AlertTriangle, PlusCircle, ArrowRight, ClipboardCheck, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { BookOpen, Users, AlertTriangle, PlusCircle, ArrowRight, ClipboardCheck, Clock, Sparkles, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 interface UngradedSubmission {
   id: string;
