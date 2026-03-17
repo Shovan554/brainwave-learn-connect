@@ -176,7 +176,7 @@ export default function CourseDetail() {
       setStudents([]);
     }
     if (reportsRes.data) setReports(reportsRes.data);
-    setLoading(false);
+    if (isInitial) setLoading(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
