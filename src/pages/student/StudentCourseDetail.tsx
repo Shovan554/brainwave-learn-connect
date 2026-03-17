@@ -25,6 +25,7 @@ export default function StudentCourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
