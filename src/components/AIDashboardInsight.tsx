@@ -11,7 +11,7 @@ interface Props {
 
 export function AIDashboardInsight({ userToken }: Props) {
   const [insight, setInsight] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   const fetchInsight = async () => {
@@ -30,10 +30,6 @@ export function AIDashboardInsight({ userToken }: Props) {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchInsight();
-  }, [userToken]);
 
   if (dismissed) return null;
 
