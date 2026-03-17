@@ -377,22 +377,19 @@ export default function StudentCourseDetail() {
             ) : assignments.map((a) => {
               const sub = mySubmissions[a.id];
               return (
-                <Card key={a.id}>
+                <Card key={a.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/student/courses/${id}/assignments/${a.id}`)}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
-                      <button className="flex items-center gap-2 text-left" onClick={() => setExpandedAssignment(expandedAssignment === a.id ? null : a.id)}>
-                        {expandedAssignment === a.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        <div>
-                          <p className="font-medium">{a.title}</p>
-                          <p className="text-sm text-muted-foreground">{a.description}</p>
-                          <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
-                            {a.due_date && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(a.due_date).toLocaleDateString()}</span>}
-                            <span>{a.points} pts</span>
-                            <span>{a.weight}%</span>
-                            {a.estimated_time_minutes > 0 && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />~{a.estimated_time_minutes}min</span>}
-                          </div>
+                      <div>
+                        <p className="font-medium">{a.title}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{a.description}</p>
+                        <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
+                          {a.due_date && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(a.due_date).toLocaleDateString()}</span>}
+                          <span>{a.points} pts</span>
+                          <span>{a.weight}%</span>
+                          {a.estimated_time_minutes > 0 && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />~{a.estimated_time_minutes}min</span>}
                         </div>
-                      </button>
+                      </div>
                       <div className="flex items-center gap-2">
                         {sub ? (
                           <Badge variant="default" className="gap-1">
@@ -404,82 +401,6 @@ export default function StudentCourseDetail() {
                         )}
                       </div>
                     </div>
-
-                    {expandedAssignment === a.id && (
-                      <div className="mt-4 space-y-4 border-t pt-4">
-                        {/* Assignment Files */}
-                        {(assignmentAssets[a.id] || []).length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Assignment Files</p>
-                            {(assignmentAssets[a.id] || []).map((asset: any) => {
-                              const url = asset.file_url || asset.link_url;
-                              const isPreviewable = asset.file_name && /\.(pdf|png|jpg|jpeg|gif|webp)$/i.test(asset.file_name);
-                              return (
-                                <div key={asset.id} className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
-                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                    {asset.file_url ? <FileText className="h-4 w-4 text-primary shrink-0" /> : <ExternalLink className="h-4 w-4 text-primary shrink-0" />}
-                                    <span className="text-sm font-medium truncate">{asset.file_name || asset.link_url}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {isPreviewable && (
-                                      <Button variant="ghost" size="sm" asChild className="h-7 gap-1 text-xs">
-                                        <a href={url} target="_blank" rel="noreferrer">
-                                          <Eye className="h-3 w-3" /> Preview
-                                        </a>
-                                      </Button>
-                                    )}
-                                    <Button variant="outline" size="sm" asChild className="h-7 gap-1 text-xs">
-                                      <a href={url} target="_blank" rel="noreferrer" download>
-                                        <Download className="h-3 w-3" /> Download
-                                      </a>
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {sub ? (
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Your Submission</p>
-                            {sub.text_content && <p className="rounded bg-muted p-2 text-sm">{sub.text_content}</p>}
-                            {sub.file_url && (
-                              <a href={sub.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
-                                <FileText className="h-3 w-3" /> {sub.file_name || "Download"}
-                              </a>
-                            )}
-                            {sub.graded_at && (
-                              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                                <p className="text-sm font-medium">Grade: {sub.grade} pts</p>
-                                {sub.feedback && <p className="mt-1 text-sm text-muted-foreground">{sub.feedback}</p>}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Submit Assignment</p>
-                            <Textarea
-                              placeholder="Write your answer or notes..."
-                              value={submissionText}
-                              onChange={(e) => setSubmissionText(e.target.value)}
-                              rows={4}
-                            />
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => submitAssignment(a.id)} disabled={submitting || !submissionText.trim()}>
-                                {submitting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                                Submit Text
-                              </Button>
-                              <div>
-                                <Label htmlFor={`sub-upload-${a.id}`} className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted">
-                                  <Upload className="h-3 w-3" /> Upload File
-                                </Label>
-                                <input id={`sub-upload-${a.id}`} type="file" className="hidden" onChange={(e) => handleSubmissionFileUpload(a.id, e)} disabled={submitting} />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               );
