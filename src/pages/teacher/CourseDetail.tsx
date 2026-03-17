@@ -580,15 +580,40 @@ export default function CourseDetail() {
                   </div>
 
                   {expandedAssignment === a.id && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
-                      {(submissions[a.id] || []).length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No submissions yet</p>
-                      ) : (
-                        (submissions[a.id] || []).map((sub) => (
-                          <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
-                        ))
-                      )}
+                    <div className="mt-4 space-y-4 border-t pt-4">
+                      {/* Assignment Files */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Attached Files</p>
+                        {(assignmentAssets[a.id] || []).map((asset: any) => (
+                          <div key={asset.id} className="flex items-center justify-between rounded-lg border p-2">
+                            <a href={asset.file_url || asset.link_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                              {asset.file_url ? <FileText className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                              {asset.file_name || asset.link_url}
+                            </a>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => deleteAssignmentAsset(asset.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`assign-upload-${a.id}`} className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted">
+                            <Upload className="h-3 w-3" /> {uploadingAssignmentFile ? "Uploading..." : "Upload File"}
+                          </Label>
+                          <input id={`assign-upload-${a.id}`} type="file" className="hidden" onChange={(e) => handleAssignmentFileUpload(a.id, e)} disabled={uploadingAssignmentFile} />
+                        </div>
+                      </div>
+
+                      {/* Submissions */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Submissions</p>
+                        {(submissions[a.id] || []).length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No submissions yet</p>
+                        ) : (
+                          (submissions[a.id] || []).map((sub) => (
+                            <SubmissionGrader key={sub.id} submission={sub} onGrade={gradeSubmission} />
+                          ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>
