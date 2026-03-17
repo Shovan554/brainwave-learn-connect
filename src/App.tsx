@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import CreateCourse from "./pages/teacher/CreateCourse";
 import CourseDetail from "./pages/teacher/CourseDetail";
+import GradeAssignment from "./pages/teacher/GradeAssignment";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import MyReadings from "./pages/student/MyReadings";
