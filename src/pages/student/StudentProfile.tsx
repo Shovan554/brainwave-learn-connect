@@ -26,6 +26,14 @@ export default function StudentProfile() {
   const [newProject, setNewProject] = useState({ title: "", description: "", github_url: "", tech_stack: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Comments state
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [sendingComment, setSendingComment] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     loadData();
