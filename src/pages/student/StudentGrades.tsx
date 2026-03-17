@@ -30,6 +30,7 @@ interface CourseGrades {
 
 export default function StudentGrades() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [courseGrades, setCourseGrades] = useState<CourseGrades[]>([]);
   const [loading, setLoading] = useState(true);
 
