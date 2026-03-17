@@ -102,8 +102,8 @@ export default function StudentAssignment() {
     <DashboardLayout>
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" size="sm" className="mb-3 gap-1" onClick={() => navigate(`/student/courses/${courseId}?tab=assignments`)}>
-          <ArrowLeft className="h-4 w-4" /> Back to Assignments
+        <Button variant="ghost" size="sm" className="mb-3 gap-1" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" /> Back
         </Button>
         <div className="flex items-start justify-between">
           <div>
