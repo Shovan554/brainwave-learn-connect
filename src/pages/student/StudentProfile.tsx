@@ -30,12 +30,14 @@ export default function StudentProfile() {
   }, [user]);
 
   const loadData = async () => {
-    const [profileRes, projectsRes] = await Promise.all([
+    const [profileRes, projectsRes, postsRes] = await Promise.all([
       supabase.from("profiles").select("name, bio, major, avatar_url").eq("user_id", user!.id).single(),
       supabase.from("project_portfolios").select("*").eq("student_id", user!.id).order("created_at", { ascending: false }),
+      supabase.from("posts").select("*").eq("author_id", user!.id).order("created_at", { ascending: false }),
     ]);
     if (profileRes.data) setProfile(profileRes.data as any);
     if (projectsRes.data) setProjects(projectsRes.data);
+    if (postsRes.data) setMyPosts(postsRes.data);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
