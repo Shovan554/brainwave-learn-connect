@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   LayoutDashboard,
   BookOpen,
@@ -17,6 +18,8 @@ import {
   Sun,
   Moon,
   Compass,
+  CalendarDays,
+  BarChart3,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
@@ -53,6 +56,8 @@ export function AppSidebar() {
   const teacherLinks = [
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/teacher/courses/new", label: "New Course", icon: PlusCircle },
+    { to: "/calendar", label: "Calendar", icon: CalendarDays },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/explore", label: "Explore", icon: Compass },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/reels", label: "Reels", icon: Film },
@@ -61,6 +66,8 @@ export function AppSidebar() {
 
   const studentLinks = [
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/calendar", label: "Calendar", icon: CalendarDays },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/student/grades", label: "Grades", icon: GraduationCap },
     { to: "/student/readings", label: "My Readings", icon: BookOpen },
     { to: "/explore", label: "Explore", icon: Compass },
@@ -73,9 +80,12 @@ export function AppSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-sidebar-border">
-        <Brain className="h-7 w-7 text-sidebar-primary" />
-        <span className="text-lg font-bold tracking-tight">BrainWave</span>
+      <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
+        <div className="flex items-center gap-2">
+          <Brain className="h-7 w-7 text-sidebar-primary" />
+          <span className="text-lg font-bold tracking-tight">BrainWave</span>
+        </div>
+        <NotificationBell />
       </div>
 
       <ScrollArea className="flex-1">

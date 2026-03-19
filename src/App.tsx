@@ -23,6 +23,8 @@ import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
 import Explore from "./pages/Explore";
+import CalendarPage from "./pages/CalendarPage";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +68,8 @@ const App = () => (
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/reels" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
