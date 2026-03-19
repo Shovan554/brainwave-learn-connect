@@ -80,9 +80,12 @@ export function AppSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-sidebar-border">
-        <Brain className="h-7 w-7 text-sidebar-primary" />
-        <span className="text-lg font-bold tracking-tight">BrainWave</span>
+      <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
+        <div className="flex items-center gap-2">
+          <Brain className="h-7 w-7 text-sidebar-primary" />
+          <span className="text-lg font-bold tracking-tight">BrainWave</span>
+        </div>
+        <NotificationBell />
       </div>
 
       <ScrollArea className="flex-1">
