@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   LayoutDashboard,
   BookOpen,
@@ -17,6 +18,8 @@ import {
   Sun,
   Moon,
   Compass,
+  CalendarDays,
+  BarChart3,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
