@@ -23,6 +23,8 @@ import PublicProfile from "./pages/student/PublicProfile";
 import Messages from "./pages/Messages";
 import Reels from "./pages/Reels";
 import Explore from "./pages/Explore";
+import CalendarPage from "./pages/CalendarPage";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
