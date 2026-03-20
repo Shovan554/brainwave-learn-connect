@@ -254,6 +254,8 @@ export default function StudentCourseDetail() {
 
         {/* Overview */}
         <TabsContent value="overview">
+          <div className="space-y-6">
+          <SemesterNotes courseId={id!} courseTitle={course.title} />
           <Card>
             <CardHeader><CardTitle className="text-base">Syllabus</CardTitle></CardHeader>
             <CardContent>
