@@ -5,3 +5,12 @@ verify_jwt = true
 
 [functions.dashboard-insight]
 verify_jwt = false
+
+[functions.generate-course-notes]
+verify_jwt = true
+
+[functions.summarize-asset]
+verify_jwt = true
+
+[functions.analyze-students]
+verify_jwt = true
