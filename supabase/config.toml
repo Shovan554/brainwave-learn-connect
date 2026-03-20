@@ -7,7 +7,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.generate-course-notes]
-verify_jwt = true
+verify_jwt = false
 
 [functions.summarize-asset]
 verify_jwt = true
