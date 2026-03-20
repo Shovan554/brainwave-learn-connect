@@ -444,6 +444,8 @@ export default function CourseDetail() {
 
         {/* Syllabus Tab */}
         <TabsContent value="syllabus">
+          <div className="space-y-6">
+          <SemesterNotes courseId={id!} courseTitle={course?.title || ""} isTeacher />
           <Card>
             <CardHeader><CardTitle className="text-base">Syllabus Files</CardTitle></CardHeader>
             <CardContent className="space-y-4">
