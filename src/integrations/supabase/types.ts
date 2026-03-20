@@ -337,6 +337,38 @@ export type Database = {
           },
         ]
       }
+      course_notes: {
+        Row: {
+          content: string
+          course_id: string
+          generated_at: string
+          generated_by: string
+          id: string
+        }
+        Insert: {
+          content?: string
+          course_id: string
+          generated_at?: string
+          generated_by: string
+          id?: string
+        }
+        Update: {
+          content?: string
+          course_id?: string
+          generated_at?: string
+          generated_by?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_notes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
