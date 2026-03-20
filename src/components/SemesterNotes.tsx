@@ -146,7 +146,7 @@ export function SemesterNotes({ courseId, courseTitle, isTeacher }: SemesterNote
                 </Badge>
               </div>
             )}
-            <ScrollArea className="max-h-[600px] rounded-lg border bg-card p-5">
+            <ScrollArea className="h-[500px] rounded-lg border bg-card p-5">
               <article className="prose prose-sm dark:prose-invert max-w-none 
                 prose-headings:text-foreground prose-headings:font-semibold
                 prose-h1:text-xl prose-h1:border-b prose-h1:pb-2 prose-h1:mb-4
