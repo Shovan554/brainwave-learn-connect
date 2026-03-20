@@ -290,6 +290,7 @@ export default function StudentCourseDetail() {
               )}
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Weekly Content */}

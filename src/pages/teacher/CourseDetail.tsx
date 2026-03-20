@@ -464,6 +464,7 @@ export default function CourseDetail() {
               ))}
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Weekly Content Tab */}
