@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { AICopilot } from "@/components/AICopilot";
+import { SemesterNotes } from "@/components/SemesterNotes";
 import {
   Loader2, Upload, Plus, FileText, Link as LinkIcon, Trash2, Copy,
   Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save, CheckCircle,
