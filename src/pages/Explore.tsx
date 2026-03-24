@@ -129,7 +129,8 @@ export default function Explore() {
       let imageUrl: string | null = null;
 
       if (postImage) {
-        const filePath = `${user.id}/${Date.now()}-${postImage.name}`;
+        const safeName = postImage.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${user.id}/${Date.now()}-${safeName}`;
         const { error: uploadErr } = await supabase.storage.from("post-images").upload(filePath, postImage);
         if (uploadErr) throw uploadErr;
         const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(filePath);
