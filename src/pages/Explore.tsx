@@ -434,12 +434,16 @@ export default function Explore() {
             <DialogTitle>Create a Post</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Textarea
-              placeholder="What are you working on? Share a project, idea, or update..."
-              value={postContent}
-              onChange={e => setPostContent(e.target.value)}
-              className="min-h-[120px] rounded-xl resize-none"
-            />
+            <div className="space-y-1">
+              <Textarea
+                placeholder="What are you working on? Share a project, idea, or update..."
+                value={postContent}
+                onChange={e => setPostContent(e.target.value)}
+                className="min-h-[150px] max-h-[400px] rounded-xl resize-y"
+                maxLength={5000}
+              />
+              <p className="text-xs text-muted-foreground text-right">{postContent.length}/5000</p>
+            </div>
             {postImagePreview && (
               <div className="relative">
                 <img src={postImagePreview} alt="Preview" className="w-full rounded-xl max-h-60 object-cover" />
