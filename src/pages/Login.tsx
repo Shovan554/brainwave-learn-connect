@@ -35,13 +35,13 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/10 px-4">
+      <Card className="w-full max-w-md shadow-2xl border-border/50">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Brain className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
+            <Brain className="h-7 w-7 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl font-extrabold">Welcome back</CardTitle>
           <CardDescription>Sign in to your BrainWave account</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
