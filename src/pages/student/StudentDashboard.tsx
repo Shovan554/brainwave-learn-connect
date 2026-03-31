@@ -201,24 +201,26 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your assignments and courses</p>
+          <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">
+            Welcome back{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}!
+          </h1>
+          <p className="text-sm text-muted-foreground">Here's what's happening with your courses today.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 rounded-xl">
-              <Plus className="h-4 w-4" /> Join Course
+            <Button size="sm" className="gap-1.5 rounded-lg text-xs font-medium shadow-sm">
+              <Plus className="h-3.5 w-3.5" /> Join Course
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="rounded-xl">
             <DialogHeader>
-              <DialogTitle>Join a Course</DialogTitle>
+              <DialogTitle className="font-display">Join a Course</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="rounded-xl" />
-              <Button onClick={joinCourse} disabled={joining} className="w-full rounded-xl">
+            <div className="space-y-3">
+              <Input placeholder="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="rounded-lg" />
+              <Button onClick={joinCourse} disabled={joining} className="w-full rounded-lg">
                 {joining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Join
               </Button>
