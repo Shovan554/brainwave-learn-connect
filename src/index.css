@@ -108,3 +108,40 @@
     font-family: 'Inter', 'system-ui', sans-serif;
   }
 }
+
+/* Enhanced prose styling for AI-generated content */
+.prose h1, .prose h2, .prose h3 {
+  @apply font-bold tracking-tight text-foreground;
+}
+.prose h1 { @apply text-xl mt-4 mb-2; }
+.prose h2 { @apply text-lg mt-4 mb-2 pb-1 border-b border-border/50; }
+.prose h3 { @apply text-base mt-3 mb-1.5; }
+.prose p { @apply leading-relaxed mb-3 text-foreground/90; }
+.prose ul, .prose ol { @apply my-2 pl-5 space-y-1.5; }
+.prose li { @apply leading-relaxed text-foreground/85; }
+.prose li::marker { @apply text-primary; }
+.prose strong { @apply font-semibold text-foreground; }
+.prose code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary;
+}
+.prose pre {
+  @apply bg-muted/80 rounded-lg p-3 my-3 overflow-x-auto border border-border/30;
+}
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+.prose blockquote {
+  @apply border-l-4 border-primary/40 pl-4 my-3 italic text-muted-foreground;
+}
+.prose hr {
+  @apply my-4 border-border/50;
+}
+.prose table {
+  @apply w-full text-sm my-3;
+}
+.prose th {
+  @apply text-left font-semibold p-2 border-b-2 border-border bg-muted/50;
+}
+.prose td {
+  @apply p-2 border-b border-border/30;
+}
