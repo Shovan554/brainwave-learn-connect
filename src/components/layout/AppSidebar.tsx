@@ -27,6 +27,41 @@ import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+interface SidebarSection {
+  label: string;
+  links: { to: string; label: string; icon: any }[];
+}
+
+function SectionGroup({ section, defaultOpen = true }: { section: SidebarSection; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="pt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
+      >
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        {section.label}
+      </button>
+      {open && (
+        <div className="mt-0.5 space-y-0.5">
+          {section.links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const { role, profile, user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -56,34 +91,61 @@ export function AppSidebar() {
     }
   }, [user, role]);
 
-  const teacherLinks = [
-    { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/teacher/courses/new", label: "New Course", icon: PlusCircle },
-    { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
-    { to: "/explore", label: "Explore", icon: Compass },
-    { to: "/messages", label: "Messages", icon: MessageCircle },
-    { to: "/reels", label: "Reels", icon: Film },
-    { to: "/student/profile", label: "My Profile", icon: User },
+  const teacherSections: SidebarSection[] = [
+    {
+      label: "Overview",
+      links: [
+        { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { to: "/teacher/courses/new", label: "New Course", icon: PlusCircle },
+        { to: "/calendar", label: "Calendar", icon: CalendarDays },
+        { to: "/analytics", label: "Analytics", icon: BarChart3 },
+      ],
+    },
+    {
+      label: "Discover",
+      links: [
+        { to: "/explore", label: "Explore", icon: Compass },
+        { to: "/reels", label: "Reels", icon: Film },
+      ],
+    },
+    {
+      label: "Communication",
+      links: [
+        { to: "/messages", label: "Messages", icon: MessageCircle },
+      ],
+    },
   ];
 
-  const studentLinks = [
-    { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
-    { to: "/student/grades", label: "Grades", icon: GraduationCap },
-    { to: "/student/readings", label: "My Readings", icon: BookOpen },
-    { to: "/explore", label: "Explore", icon: Compass },
-    { to: "/messages", label: "Messages", icon: MessageCircle },
-    { to: "/reels", label: "Reels", icon: Film },
-    { to: "/student/profile", label: "My Profile", icon: User },
+  const studentSections: SidebarSection[] = [
+    {
+      label: "Overview",
+      links: [
+        { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { to: "/calendar", label: "Calendar", icon: CalendarDays },
+        { to: "/analytics", label: "Analytics", icon: BarChart3 },
+        { to: "/student/grades", label: "Grades", icon: GraduationCap },
+      ],
+    },
+    {
+      label: "Discover",
+      links: [
+        { to: "/student/readings", label: "My Readings", icon: BookOpen },
+        { to: "/explore", label: "Explore", icon: Compass },
+        { to: "/reels", label: "Reels", icon: Film },
+      ],
+    },
+    {
+      label: "Communication",
+      links: [
+        { to: "/messages", label: "Messages", icon: MessageCircle },
+      ],
+    },
   ];
 
-  const links = role === "teacher" ? teacherLinks : studentLinks;
+  const sections = role === "teacher" ? teacherSections : studentSections;
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
@@ -119,21 +181,13 @@ export function AppSidebar() {
         </div>
 
         <ScrollArea className="flex-1">
-          <nav className="space-y-1 px-3 py-4">
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
-                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </NavLink>
+          <nav className="px-3 py-2">
+            {sections.map((section) => (
+              <SectionGroup key={section.label} section={section} />
             ))}
 
             {courses.length > 0 && (
-              <div className="pt-3">
+              <div className="pt-2">
                 <button
                   onClick={() => setCoursesOpen(!coursesOpen)}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
@@ -142,7 +196,7 @@ export function AppSidebar() {
                   My Courses
                 </button>
                 {coursesOpen && (
-                  <div className="mt-1 space-y-0.5">
+                  <div className="mt-0.5 space-y-0.5">
                     {courses.map((c: any) => (
                       <NavLink
                         key={c.id}
@@ -162,15 +216,18 @@ export function AppSidebar() {
         </ScrollArea>
 
         <div className="border-t border-sidebar-border p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-xs font-bold text-white">
+          <NavLink
+            to="/student/profile"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5 mb-2"
+            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+          >
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-white">
               {profile?.name?.charAt(0)?.toUpperCase() || "?"}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{profile?.name || "User"}</p>
-              <p className="truncate text-xs text-sidebar-foreground/50 capitalize">{role}</p>
             </div>
-          </div>
+          </NavLink>
           <Button
             variant="ghost"
             size="sm"
