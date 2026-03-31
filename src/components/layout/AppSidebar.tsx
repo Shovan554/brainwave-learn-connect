@@ -79,11 +79,13 @@ export function AppSidebar() {
   const links = role === "teacher" ? teacherLinks : studentLinks;
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-xl">
       <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <Brain className="h-7 w-7 text-sidebar-primary" />
-          <span className="text-lg font-bold tracking-tight">BrainWave</span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
+            <Brain className="h-5 w-5 text-sidebar-primary" />
+          </div>
+          <span className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-sidebar-primary to-accent bg-clip-text text-transparent">BrainWave</span>
         </div>
         <NotificationBell />
       </div>
