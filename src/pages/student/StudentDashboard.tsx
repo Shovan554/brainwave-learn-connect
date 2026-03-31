@@ -299,12 +299,12 @@ export default function StudentDashboard() {
 
       {/* ── Course Grades ── */}
       {courseGrades.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Course Grades</h2>
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-display font-semibold">Course Grades</h2>
           </div>
-          <Card className="overflow-hidden border-0 shadow-lg">
+          <Card className="overflow-hidden border border-border">
             <CardContent className="p-6">
               {/* Legend */}
               <div className="flex flex-wrap gap-3 mb-5">
