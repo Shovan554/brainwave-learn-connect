@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SidebarMobileProvider } from "@/hooks/useSidebarMobile";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FloatingAICopilot } from "@/components/FloatingAICopilot";
@@ -44,6 +45,7 @@ const App = () => (
       <BrowserRouter>
         <ThemeProvider>
         <AuthProvider>
+        <SidebarMobileProvider>
           <Routes>
             <Route path="/" element={<RootRedirect />} />
             <Route path="/login" element={<Login />} />
@@ -74,6 +76,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FloatingAICopilot />
+        </SidebarMobileProvider>
         </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>

@@ -1,17 +1,32 @@
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useSidebarMobile } from "@/hooks/useSidebarMobile";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 import studentBgLight from "@/assets/student-bg-light.jpg";
 import studentBgDark from "@/assets/student-bg-dark.jpg";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
   const { theme } = useTheme();
+  const { toggle } = useSidebarMobile();
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <main className="ml-64 min-h-screen relative overflow-hidden">
+
+      {/* Mobile top bar */}
+      <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 backdrop-blur-md px-4 lg:hidden">
+        <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <span className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          BrainWave
+        </span>
+      </div>
+
+      <main className="lg:ml-64 min-h-screen relative overflow-hidden">
         {/* Educational background pattern */}
         {role === "student" ? (
           <div
@@ -38,7 +53,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             }}
           />
         )}
-        <div className="relative z-[1] p-6 lg:p-8">{children}</div>
+        <div className="relative z-[1] p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );
