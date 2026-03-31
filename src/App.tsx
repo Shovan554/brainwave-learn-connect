@@ -76,6 +76,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FloatingAICopilot />
+        </SidebarMobileProvider>
         </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>
