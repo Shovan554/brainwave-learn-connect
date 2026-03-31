@@ -50,7 +50,9 @@ export function AIDashboardInsight({ userToken }: Props) {
               <Skeleton className="h-4 w-3/4" />
             </div>
           ) : insight ? (
-            <p className="text-sm text-foreground/90 leading-relaxed">{insight}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>{insight}</ReactMarkdown>
+            </div>
           ) : (
             <div className="flex items-center gap-3">
               <p className="text-sm text-muted-foreground">Click to get personalized advice</p>
