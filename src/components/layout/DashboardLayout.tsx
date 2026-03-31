@@ -10,14 +10,16 @@ import studentBgDark from "@/assets/student-bg-dark.jpg";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
   const { theme } = useTheme();
-  const { toggle } = useSidebarMobile();
+  const { toggle, collapsed } = useSidebarMobile();
+
+  const mainMargin = collapsed ? "lg:ml-16" : "lg:ml-64";
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border/60 bg-background/90 backdrop-blur-md px-4 lg:hidden">
+      <div className={`sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border/60 bg-background/90 backdrop-blur-md px-4 lg:hidden`}>
         <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8">
           <Menu className="h-4 w-4" />
         </Button>
@@ -26,8 +28,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </span>
       </div>
 
-      <main className="lg:ml-64 min-h-screen relative overflow-hidden">
-        {/* Educational background pattern */}
+      <main className={`${mainMargin} min-h-screen relative overflow-hidden transition-all duration-300`}>
         {role === "student" ? (
           <div
             className="pointer-events-none absolute inset-0 z-0"

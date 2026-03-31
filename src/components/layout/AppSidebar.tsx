@@ -8,12 +8,12 @@ import {
   LayoutDashboard,
   BookOpen,
   PlusCircle,
-  User,
   LogOut,
   Brain,
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   MessageCircle,
   Film,
   Sun,
@@ -22,25 +22,69 @@ import {
   CalendarDays,
   BarChart3,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 interface SidebarSection {
   label: string;
   links: { to: string; label: string; icon: any }[];
 }
 
-function SectionGroup({ section, defaultOpen = true }: { section: SidebarSection; defaultOpen?: boolean }) {
+function SectionGroup({
+  section,
+  defaultOpen = true,
+  collapsed,
+}: {
+  section: SidebarSection;
+  defaultOpen?: boolean;
+  collapsed?: boolean;
+}) {
   const [open, setOpen] = useState(defaultOpen);
+
+  if (collapsed) {
+    return (
+      <div className="pt-2 space-y-1">
+        {section.links.map((link) => (
+          <Tooltip key={link.to}>
+            <TooltipTrigger asChild>
+              <NavLink
+                to={link.to}
+                className="flex items-center justify-center rounded-lg p-2.5 text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+              >
+                <link.icon className="h-4 w-4" />
+              </NavLink>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {link.label}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="pt-2">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
       >
-        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        {open ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
         {section.label}
       </button>
       {open && (
@@ -65,7 +109,7 @@ function SectionGroup({ section, defaultOpen = true }: { section: SidebarSection
 export function AppSidebar() {
   const { role, profile, user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { isOpen, close } = useSidebarMobile();
+  const { isOpen, collapsed, close, toggleCollapse } = useSidebarMobile();
   const [courses, setCourses] = useState<any[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(true);
 
@@ -77,7 +121,9 @@ export function AppSidebar() {
         .select("course_id, courses(id, title)")
         .eq("student_id", user.id)
         .then(({ data }) => {
-          setCourses(data?.map((e: any) => e.courses).filter(Boolean) || []);
+          setCourses(
+            data?.map((e: any) => e.courses).filter(Boolean) || []
+          );
         });
     } else if (role === "teacher") {
       supabase
@@ -143,111 +189,249 @@ export function AppSidebar() {
   ];
 
   const sections = role === "teacher" ? teacherSections : studentSections;
+  const sidebarWidth = collapsed ? "w-16" : "w-64";
 
   return (
-    <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={close}
-        />
-      )}
+    <TooltipProvider delayDuration={100}>
+      <>
+        {/* Mobile overlay */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={close}
+          />
+        )}
 
-      <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
-              <Brain className="h-5 w-5 text-sidebar-primary" />
-            </div>
-            <span className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-sidebar-primary to-accent bg-clip-text text-transparent">
-              BrainWave
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden h-8 w-8 text-sidebar-foreground/70 hover:bg-sidebar-accent"
-              onClick={close}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <ScrollArea className="flex-1">
-          <nav className="px-3 py-2">
-            {sections.map((section) => (
-              <SectionGroup key={section.label} section={section} />
-            ))}
-
-            {courses.length > 0 && (
-              <div className="pt-2">
-                <button
-                  onClick={() => setCoursesOpen(!coursesOpen)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
-                >
-                  {coursesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  My Courses
-                </button>
-                {coursesOpen && (
-                  <div className="mt-0.5 space-y-0.5">
-                    {courses.map((c: any) => (
-                      <NavLink
-                        key={c.id}
-                        to={role === "teacher" ? `/teacher/courses/${c.id}` : `/student/courses/${c.id}`}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                      >
-                        <BookOpen className="h-3.5 w-3.5" />
-                        <span className="truncate">{c.title}</span>
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
+        <aside
+          className={`fixed left-0 top-0 z-50 flex h-screen ${sidebarWidth} flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-xl transition-all duration-300 ease-in-out lg:translate-x-0 ${
+            isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          }`}
+        >
+          {/* Header */}
+          <div
+            className={`flex h-16 items-center ${collapsed ? "justify-center px-2" : "justify-between px-6"} border-b border-sidebar-border`}
+          >
+            {collapsed ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
+                <Brain className="h-5 w-5 text-sidebar-primary" />
               </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
+                    <Brain className="h-5 w-5 text-sidebar-primary" />
+                  </div>
+                  <span className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-sidebar-primary to-accent bg-clip-text text-transparent">
+                    BrainWave
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <NotificationBell />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden h-8 w-8 text-sidebar-foreground/70 hover:bg-sidebar-accent"
+                    onClick={close}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
             )}
-          </nav>
-        </ScrollArea>
+          </div>
 
-        <div className="border-t border-sidebar-border p-4">
-          <NavLink
-            to="/student/profile"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5 mb-2"
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-white">
-              {profile?.name?.charAt(0)?.toUpperCase() || "?"}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{profile?.name || "User"}</p>
-            </div>
-          </NavLink>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200 mb-1"
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
-            onClick={signOut}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </aside>
-    </>
+          {/* Nav */}
+          <ScrollArea className="flex-1">
+            <nav className={collapsed ? "px-2 py-2" : "px-3 py-2"}>
+              {sections.map((section) => (
+                <SectionGroup
+                  key={section.label}
+                  section={section}
+                  collapsed={collapsed}
+                />
+              ))}
+
+              {/* My Courses */}
+              {courses.length > 0 && (
+                <div className="pt-2">
+                  {collapsed ? (
+                    <div className="space-y-1">
+                      {courses.map((c: any) => (
+                        <Tooltip key={c.id}>
+                          <TooltipTrigger asChild>
+                            <NavLink
+                              to={
+                                role === "teacher"
+                                  ? `/teacher/courses/${c.id}`
+                                  : `/student/courses/${c.id}`
+                              }
+                              className="flex items-center justify-center rounded-lg p-2.5 text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </NavLink>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" sideOffset={8}>
+                            {c.title}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setCoursesOpen(!coursesOpen)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/80"
+                      >
+                        {coursesOpen ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                        My Courses
+                      </button>
+                      {coursesOpen && (
+                        <div className="mt-0.5 space-y-0.5">
+                          {courses.map((c: any) => (
+                            <NavLink
+                              key={c.id}
+                              to={
+                                role === "teacher"
+                                  ? `/teacher/courses/${c.id}`
+                                  : `/student/courses/${c.id}`
+                              }
+                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+                              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                            >
+                              <BookOpen className="h-3.5 w-3.5" />
+                              <span className="truncate">{c.title}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </nav>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="border-t border-sidebar-border p-2">
+            {collapsed ? (
+              <div className="space-y-1 flex flex-col items-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to="/student/profile"
+                      className="flex items-center justify-center rounded-lg p-2.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-white">
+                        {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">My Profile</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-sidebar-foreground/70 hover:bg-sidebar-accent"
+                      onClick={toggleTheme}
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-sidebar-foreground/70 hover:bg-sidebar-accent"
+                      onClick={signOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Sign Out</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-sidebar-foreground/70 hover:bg-sidebar-accent"
+                      onClick={toggleCollapse}
+                    >
+                      <PanelLeftOpen className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Expand Sidebar</TooltipContent>
+                </Tooltip>
+              </div>
+            ) : (
+              <>
+                <NavLink
+                  to="/student/profile"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5 mb-1"
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-white">
+                    {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {profile?.name || "User"}
+                    </p>
+                  </div>
+                </NavLink>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200 mb-1"
+                  onClick={toggleTheme}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200 mb-1"
+                  onClick={signOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
+                  onClick={toggleCollapse}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                  Collapse
+                </Button>
+              </>
+            )}
+          </div>
+        </aside>
+      </>
+    </TooltipProvider>
   );
 }
