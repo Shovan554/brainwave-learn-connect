@@ -528,16 +528,16 @@ export default function StudentDashboard() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((c: any) => (
-            <Card key={c.id} className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-transparent hover:border-primary/20">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{c.title}</CardTitle>
+            <Card key={c.id} className="group relative overflow-hidden transition-all duration-200 hover:shadow-sm cursor-pointer border border-border hover:border-primary/30">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-display">{c.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">{c.term}</p>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" size="sm" asChild className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
+                <Button variant="outline" size="sm" asChild className="w-full rounded-lg text-xs group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
                   <Link to={`/student/courses/${c.id}`}>
-                    View Course <ArrowRight className="ml-2 h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
+                    View Course <ArrowRight className="ml-1.5 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
               </CardContent>
