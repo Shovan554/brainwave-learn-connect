@@ -513,8 +513,8 @@ export default function StudentDashboard() {
 
       {/* Courses */}
       <div className="mb-3 flex items-center gap-2">
-        <GraduationCap className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">My Courses</h2>
+        <GraduationCap className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-display font-semibold">My Courses</h2>
       </div>
 
       {courses.length === 0 ? (
