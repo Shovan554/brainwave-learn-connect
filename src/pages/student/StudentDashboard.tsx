@@ -231,7 +231,7 @@ export default function StudentDashboard() {
       <AIDashboardInsight userToken={session?.access_token ?? null} />
 
       {/* ── Metrics Strip ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-6 sm:mb-8">
         {/* Past Due */}
         <Card
           className={`cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${pastDue.length > 0 ? "border-destructive/40" : ""}`}
