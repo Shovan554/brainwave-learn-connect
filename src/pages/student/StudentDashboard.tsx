@@ -445,8 +445,8 @@ export default function StudentDashboard() {
 
       {/* Priority Queue */}
       <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">What To Do Next</h2>
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-display font-semibold">What To Do Next</h2>
       </div>
 
       {assignments.length === 0 ? (
