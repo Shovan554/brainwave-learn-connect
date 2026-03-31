@@ -201,10 +201,10 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Dashboard</h1>
-          <p className="text-muted-foreground">Your assignments and courses</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Your assignments and courses</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
