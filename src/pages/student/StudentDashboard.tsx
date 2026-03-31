@@ -233,55 +233,66 @@ export default function StudentDashboard() {
       <AIDashboardInsight userToken={session?.access_token ?? null} />
 
       {/* ── Metrics Strip ── */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
         {/* Past Due */}
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${pastDue.length > 0 ? "border-destructive/40" : ""}`}
+          className={`cursor-pointer transition-all hover:shadow-sm border ${pastDue.length > 0 ? "border-destructive/30" : "border-border"}`}
           onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${pastDue.length > 0 ? "bg-destructive/10" : "bg-muted"}`}>
               <FileWarning className={`h-5 w-5 ${pastDue.length > 0 ? "text-destructive" : "text-muted-foreground"}`} />
-              {pastDue.length > 0 && <Badge variant="destructive" className="text-[10px] px-1.5">{pastDue.length}</Badge>}
             </div>
-            <span className="text-2xl font-bold">{pastDue.length}</span>
-            <span className="text-xs text-muted-foreground">Past Due</span>
+            <div>
+              <span className="text-2xl font-display font-bold">{pastDue.length}</span>
+              <p className="text-xs text-muted-foreground">Past Due</p>
+            </div>
+            {pastDue.length > 0 && <Badge variant="destructive" className="ml-auto text-[10px] px-1.5">{pastDue.length}</Badge>}
           </CardContent>
         </Card>
 
-        {/* Assignments Due */}
+        {/* Due Soon */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          className="cursor-pointer transition-all hover:shadow-sm border border-border"
           onClick={() => assignments.length > 0 && setDueOpen(true)}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Calendar className="h-5 w-5 text-primary" />
-              {assignments.length > 0 && <Badge variant="secondary" className="text-[10px] px-1.5">{assignments.length}</Badge>}
             </div>
-            <span className="text-2xl font-bold">{assignments.length}</span>
-            <span className="text-xs text-muted-foreground">Due Soon</span>
+            <div>
+              <span className="text-2xl font-display font-bold">{assignments.length}</span>
+              <p className="text-xs text-muted-foreground">Due Soon</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Submitted */}
-        <Card className="transition-all hover:shadow-md hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col gap-1">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span className="text-2xl font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
-            <span className="text-xs text-muted-foreground">Submitted</span>
+        <Card className="transition-all hover:shadow-sm border border-border">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
+              <CheckCircle className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <span className="text-2xl font-display font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
+              <p className="text-xs text-muted-foreground">Submitted</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Overall Grade */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          className="cursor-pointer transition-all hover:shadow-sm border border-border"
           onClick={() => navigate("/student/grades")}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <Trophy className="h-5 w-5 text-yellow-500" />
-            <span className="text-2xl font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
-            <span className="text-xs text-muted-foreground">Overall Grade</span>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
+              <Trophy className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <span className="text-2xl font-display font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
+              <p className="text-xs text-muted-foreground">Overall Grade</p>
+            </div>
           </CardContent>
         </Card>
       </div>
