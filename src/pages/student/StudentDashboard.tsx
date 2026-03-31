@@ -463,7 +463,7 @@ export default function StudentDashboard() {
             const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
             const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
             return (
-              <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+              <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
                 i === 0
                   ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
                   : i === 1
