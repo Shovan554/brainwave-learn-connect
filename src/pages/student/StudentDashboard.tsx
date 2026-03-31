@@ -499,7 +499,7 @@ export default function StudentDashboard() {
                     <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
                     <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
                   </div>
-                  <Button variant="ghost" size="sm" asChild className="rounded-xl">
+                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
                     <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
                       <ArrowRight className="h-4 w-4" />
                     </Link>
