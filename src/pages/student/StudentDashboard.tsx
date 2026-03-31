@@ -204,7 +204,7 @@ export default function StudentDashboard() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">
-            Welcome back{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}!
+            My Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">Here's what's happening with your courses today.</p>
         </div>
