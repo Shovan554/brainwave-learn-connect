@@ -17,11 +17,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 backdrop-blur-md px-4 lg:hidden">
-        <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9">
-          <Menu className="h-5 w-5" />
+      <div className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border/60 bg-background/90 backdrop-blur-md px-4 lg:hidden">
+        <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8">
+          <Menu className="h-4 w-4" />
         </Button>
-        <span className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <span className="text-sm font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           BrainWave
         </span>
       </div>

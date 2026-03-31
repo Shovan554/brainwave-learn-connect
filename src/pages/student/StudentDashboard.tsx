@@ -201,24 +201,26 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your assignments and courses</p>
+          <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">
+            My Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground">Here's what's happening with your courses today.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 rounded-xl">
-              <Plus className="h-4 w-4" /> Join Course
+            <Button size="sm" className="gap-1.5 rounded-lg text-xs font-medium shadow-sm">
+              <Plus className="h-3.5 w-3.5" /> Join Course
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="rounded-xl">
             <DialogHeader>
-              <DialogTitle>Join a Course</DialogTitle>
+              <DialogTitle className="font-display">Join a Course</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="rounded-xl" />
-              <Button onClick={joinCourse} disabled={joining} className="w-full rounded-xl">
+            <div className="space-y-3">
+              <Input placeholder="Enter invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="rounded-lg" />
+              <Button onClick={joinCourse} disabled={joining} className="w-full rounded-lg">
                 {joining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Join
               </Button>
@@ -231,67 +233,78 @@ export default function StudentDashboard() {
       <AIDashboardInsight userToken={session?.access_token ?? null} />
 
       {/* ── Metrics Strip ── */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
         {/* Past Due */}
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${pastDue.length > 0 ? "border-destructive/40" : ""}`}
+          className={`cursor-pointer transition-all hover:shadow-sm border ${pastDue.length > 0 ? "border-destructive/30" : "border-border"}`}
           onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${pastDue.length > 0 ? "bg-destructive/10" : "bg-muted"}`}>
               <FileWarning className={`h-5 w-5 ${pastDue.length > 0 ? "text-destructive" : "text-muted-foreground"}`} />
-              {pastDue.length > 0 && <Badge variant="destructive" className="text-[10px] px-1.5">{pastDue.length}</Badge>}
             </div>
-            <span className="text-2xl font-bold">{pastDue.length}</span>
-            <span className="text-xs text-muted-foreground">Past Due</span>
+            <div>
+              <span className="text-2xl font-display font-bold">{pastDue.length}</span>
+              <p className="text-xs text-muted-foreground">Past Due</p>
+            </div>
+            {pastDue.length > 0 && <Badge variant="destructive" className="ml-auto text-[10px] px-1.5">{pastDue.length}</Badge>}
           </CardContent>
         </Card>
 
-        {/* Assignments Due */}
+        {/* Due Soon */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          className="cursor-pointer transition-all hover:shadow-sm border border-border"
           onClick={() => assignments.length > 0 && setDueOpen(true)}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Calendar className="h-5 w-5 text-primary" />
-              {assignments.length > 0 && <Badge variant="secondary" className="text-[10px] px-1.5">{assignments.length}</Badge>}
             </div>
-            <span className="text-2xl font-bold">{assignments.length}</span>
-            <span className="text-xs text-muted-foreground">Due Soon</span>
+            <div>
+              <span className="text-2xl font-display font-bold">{assignments.length}</span>
+              <p className="text-xs text-muted-foreground">Due Soon</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Submitted */}
-        <Card className="transition-all hover:shadow-md hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col gap-1">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span className="text-2xl font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
-            <span className="text-xs text-muted-foreground">Submitted</span>
+        <Card className="transition-all hover:shadow-sm border border-border">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
+              <CheckCircle className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <span className="text-2xl font-display font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
+              <p className="text-xs text-muted-foreground">Submitted</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Overall Grade */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          className="cursor-pointer transition-all hover:shadow-sm border border-border"
           onClick={() => navigate("/student/grades")}
         >
-          <CardContent className="p-4 flex flex-col gap-1">
-            <Trophy className="h-5 w-5 text-yellow-500" />
-            <span className="text-2xl font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
-            <span className="text-xs text-muted-foreground">Overall Grade</span>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
+              <Trophy className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <span className="text-2xl font-display font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
+              <p className="text-xs text-muted-foreground">Overall Grade</p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* ── Course Grades ── */}
       {courseGrades.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Course Grades</h2>
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-display font-semibold">Course Grades</h2>
           </div>
-          <Card className="overflow-hidden border-0 shadow-lg">
+          <Card className="overflow-hidden border border-border">
             <CardContent className="p-6">
               {/* Legend */}
               <div className="flex flex-wrap gap-3 mb-5">
@@ -432,8 +445,8 @@ export default function StudentDashboard() {
 
       {/* Priority Queue */}
       <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">What To Do Next</h2>
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-display font-semibold">What To Do Next</h2>
       </div>
 
       {assignments.length === 0 ? (
@@ -450,7 +463,7 @@ export default function StudentDashboard() {
             const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
             const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
             return (
-              <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+              <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
                 i === 0
                   ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
                   : i === 1
@@ -486,7 +499,7 @@ export default function StudentDashboard() {
                     <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
                     <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
                   </div>
-                  <Button variant="ghost" size="sm" asChild className="rounded-xl">
+                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
                     <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
                       <ArrowRight className="h-4 w-4" />
                     </Link>
@@ -500,8 +513,8 @@ export default function StudentDashboard() {
 
       {/* Courses */}
       <div className="mb-3 flex items-center gap-2">
-        <GraduationCap className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">My Courses</h2>
+        <GraduationCap className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-display font-semibold">My Courses</h2>
       </div>
 
       {courses.length === 0 ? (
@@ -515,16 +528,16 @@ export default function StudentDashboard() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((c: any) => (
-            <Card key={c.id} className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-transparent hover:border-primary/20">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{c.title}</CardTitle>
+            <Card key={c.id} className="group relative overflow-hidden transition-all duration-200 hover:shadow-sm cursor-pointer border border-border hover:border-primary/30">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-display">{c.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">{c.term}</p>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" size="sm" asChild className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
+                <Button variant="outline" size="sm" asChild className="w-full rounded-lg text-xs group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
                   <Link to={`/student/courses/${c.id}`}>
-                    View Course <ArrowRight className="ml-2 h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
+                    View Course <ArrowRight className="ml-1.5 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
               </CardContent>
