@@ -64,7 +64,8 @@ export default function StudentDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pastDueOpen, setPastDueOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
-
+  const [gradesOpen, setGradesOpen] = useState(true);
+  const [todoOpen, setTodoOpen] = useState(true);
   useEffect(() => {
     if (!user) return;
     loadData();
