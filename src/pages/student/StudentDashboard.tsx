@@ -450,78 +450,80 @@ export default function StudentDashboard() {
       </Dialog>
 
       {/* Priority Queue */}
-      <div className="mb-3 flex items-center gap-2">
+      <button
+        onClick={() => setTodoOpen(v => !v)}
+        className="mb-3 flex items-center gap-2 w-full text-left group"
+      >
         <Sparkles className="h-4 w-4 text-primary" />
         <h2 className="text-base font-display font-semibold">What To Do Next</h2>
-      </div>
+        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${todoOpen ? "rotate-180" : ""}`} />
+      </button>
 
-      {assignments.length === 0 ? (
-        <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
-          <CardContent className="flex flex-col items-center py-10 text-center">
-            <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
-            <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
-            <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="mb-8 space-y-2">
-          {assignments.slice(0, 5).map((a, i) => {
-            const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
-            const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
-            return (
-              <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
-                i === 0
-                  ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
-                  : i === 1
-                  ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
-                  : "hover:border-primary/20"
-              }`}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {i === 0 && (
-                        <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
-                          <Flame className="h-3 w-3" /> Top Priority
-                        </Badge>
-                      )}
-                      {i === 1 && (
-                        <Badge className="bg-orange-500 text-white text-xs gap-1">
-                          <AlertTriangle className="h-3 w-3" /> High
-                        </Badge>
-                      )}
-                      {i === 2 && (
-                        <Badge variant="secondary" className="text-xs gap-1">
-                          <Sparkles className="h-3 w-3" /> Medium
-                        </Badge>
-                      )}
-                      <Badge variant={urgencyColor(a) as any} className="text-xs">
-                        {a.due_date ? (
-                          isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
-                          isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
-                          new Date(a.due_date).toLocaleDateString()
-                        ) : "No due date"}
-                      </Badge>
-                    </div>
-                    <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                    <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+      {todoOpen && (
+        <>
+          {assignments.length === 0 ? (
+            <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <CardContent className="flex flex-col items-center py-10 text-center">
+                <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
+                <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
+                <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              {assignments.slice(0, 5).map((a, i) => {
+                const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+                const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+                return (
+                  <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
+                    i === 0
+                      ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
+                      : i === 1
+                      ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
+                      : "hover:border-primary/20"
+                  }`}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {i === 0 && (
+                            <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
+                              <Flame className="h-3 w-3" /> Top Priority
+                            </Badge>
+                          )}
+                          {i === 1 && (
+                            <Badge className="bg-orange-500 text-white text-xs gap-1">
+                              <AlertTriangle className="h-3 w-3" /> High
+                            </Badge>
+                          )}
+                          {i === 2 && (
+                            <Badge variant="secondary" className="text-xs gap-1">
+                              <Sparkles className="h-3 w-3" /> Medium
+                            </Badge>
+                          )}
+                          <Badge variant={urgencyColor(a) as any} className="text-xs">
+                            {a.due_date ? (
+                              isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                              isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                              new Date(a.due_date).toLocaleDateString()
+                            ) : "No due date"}
+                          </Badge>
+                        </div>
+                        <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
+                        <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                      </div>
+                      <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                        <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
-
-      {/* Courses */}
-      <div className="mb-3 flex items-center gap-2">
-        <GraduationCap className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-display font-semibold">My Courses</h2>
-      </div>
 
       {courses.length === 0 ? (
         <Card className="border-dashed">
