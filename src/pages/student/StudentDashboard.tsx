@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
-  Calendar, Trophy, TrendingUp, X,
+  Calendar, Trophy, TrendingUp, X, ChevronDown,
 } from "lucide-react";
 
 interface PrioritizedAssignment {
@@ -64,7 +64,8 @@ export default function StudentDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pastDueOpen, setPastDueOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
-
+  const [gradesOpen, setGradesOpen] = useState(true);
+  const [todoOpen, setTodoOpen] = useState(true);
   useEffect(() => {
     if (!user) return;
     loadData();
@@ -300,73 +301,78 @@ export default function StudentDashboard() {
       {/* ── Course Grades ── */}
       {courseGrades.length > 0 && (
         <div className="mb-6">
-          <div className="mb-3 flex items-center gap-2">
+          <button
+            onClick={() => setGradesOpen(v => !v)}
+            className="mb-3 flex items-center gap-2 w-full text-left group"
+          >
             <TrendingUp className="h-4 w-4 text-primary" />
             <h2 className="text-base font-display font-semibold">Course Grades</h2>
-          </div>
-          <Card className="overflow-hidden border border-border">
-            <CardContent className="p-6">
-              {/* Legend */}
-              <div className="flex flex-wrap gap-3 mb-5">
-                {[
-                  { letter: "A", label: "90-100%", color: "hsl(var(--primary))" },
-                  { letter: "B", label: "80-89%", color: "hsl(152 69% 53%)" },
-                  { letter: "C", label: "70-79%", color: "hsl(45 93% 58%)" },
-                  { letter: "D", label: "60-69%", color: "hsl(25 95% 63%)" },
-                  { letter: "F", label: "<60%", color: "hsl(var(--destructive))" },
-                ].map(g => (
-                  <div key={g.letter} className="flex items-center gap-1.5">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
-                    <span className="text-[11px] text-muted-foreground">{g.letter} ({g.label})</span>
-                  </div>
-                ))}
-              </div>
+            <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${gradesOpen ? "rotate-180" : ""}`} />
+          </button>
+          {gradesOpen && (
+            <Card className="overflow-hidden border border-border animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <CardContent className="p-6">
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 mb-5">
+                  {[
+                    { letter: "A", label: "90-100%", color: "hsl(var(--primary))" },
+                    { letter: "B", label: "80-89%", color: "hsl(152 69% 53%)" },
+                    { letter: "C", label: "70-79%", color: "hsl(45 93% 58%)" },
+                    { letter: "D", label: "60-69%", color: "hsl(25 95% 63%)" },
+                    { letter: "F", label: "<60%", color: "hsl(var(--destructive))" },
+                  ].map(g => (
+                    <div key={g.letter} className="flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
+                      <span className="text-[11px] text-muted-foreground">{g.letter} ({g.label})</span>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="space-y-3">
-                {courseGrades.map(cg => {
-                  const pct = cg.percentage ?? 0;
-                  const letter = cg.percentage !== null
-                    ? pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F"
-                    : "—";
-                  const color = cg.percentage !== null
-                    ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
-                    : "hsl(var(--muted))";
+                <div className="space-y-3">
+                  {courseGrades.map(cg => {
+                    const pct = cg.percentage ?? 0;
+                    const letter = cg.percentage !== null
+                      ? pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F"
+                      : "—";
+                    const color = cg.percentage !== null
+                      ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
+                      : "hsl(var(--muted))";
 
-                  return (
-                    <div
-                      key={cg.course_id}
-                      className="group cursor-pointer rounded-xl p-3 transition-all duration-300 hover:bg-muted/50 hover:scale-[1.01]"
-                      onClick={() => navigate("/student/grades")}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium group-hover:text-primary transition-colors truncate max-w-[60%]">
-                          {cg.course_title}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{pct > 0 ? `${pct.toFixed(1)}%` : "No grades"}</span>
-                          <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
-                            {letter}
+                    return (
+                      <div
+                        key={cg.course_id}
+                        className="group cursor-pointer rounded-xl p-3 transition-all duration-300 hover:bg-muted/50 hover:scale-[1.01]"
+                        onClick={() => navigate("/student/grades")}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium group-hover:text-primary transition-colors truncate max-w-[60%]">
+                            {cg.course_title}
                           </span>
-                          
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{pct > 0 ? `${pct.toFixed(1)}%` : "No grades"}</span>
+                            <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
+                              {letter}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+                            style={{
+                              width: `${Math.max(pct, 2)}%`,
+                              backgroundColor: color,
+                              boxShadow: `0 0 10px 1px ${color}`,
+                              opacity: 0.9,
+                            }}
+                          />
                         </div>
                       </div>
-                      <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
-                        <div
-                          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
-                          style={{
-                            width: `${Math.max(pct, 2)}%`,
-                            backgroundColor: color,
-                            boxShadow: `0 0 10px 1px ${color}`,
-                            opacity: 0.9,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -444,71 +450,79 @@ export default function StudentDashboard() {
       </Dialog>
 
       {/* Priority Queue */}
-      <div className="mb-3 flex items-center gap-2">
+      <button
+        onClick={() => setTodoOpen(v => !v)}
+        className="mb-3 flex items-center gap-2 w-full text-left group"
+      >
         <Sparkles className="h-4 w-4 text-primary" />
         <h2 className="text-base font-display font-semibold">What To Do Next</h2>
-      </div>
+        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${todoOpen ? "rotate-180" : ""}`} />
+      </button>
 
-      {assignments.length === 0 ? (
-        <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
-          <CardContent className="flex flex-col items-center py-10 text-center">
-            <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
-            <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
-            <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="mb-8 space-y-2">
-          {assignments.slice(0, 5).map((a, i) => {
-            const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
-            const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
-            return (
-              <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
-                i === 0
-                  ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
-                  : i === 1
-                  ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
-                  : "hover:border-primary/20"
-              }`}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {i === 0 && (
-                        <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
-                          <Flame className="h-3 w-3" /> Top Priority
-                        </Badge>
-                      )}
-                      {i === 1 && (
-                        <Badge className="bg-orange-500 text-white text-xs gap-1">
-                          <AlertTriangle className="h-3 w-3" /> High
-                        </Badge>
-                      )}
-                      {i === 2 && (
-                        <Badge variant="secondary" className="text-xs gap-1">
-                          <Sparkles className="h-3 w-3" /> Medium
-                        </Badge>
-                      )}
-                      <Badge variant={urgencyColor(a) as any} className="text-xs">
-                        {a.due_date ? (
-                          isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
-                          isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
-                          new Date(a.due_date).toLocaleDateString()
-                        ) : "No due date"}
-                      </Badge>
-                    </div>
-                    <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                    <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+      {todoOpen && (
+        <>
+          {assignments.length === 0 ? (
+            <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <CardContent className="flex flex-col items-center py-10 text-center">
+                <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
+                <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
+                <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              {assignments.slice(0, 5).map((a, i) => {
+                const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+                const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+                return (
+                  <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
+                    i === 0
+                      ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
+                      : i === 1
+                      ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
+                      : "hover:border-primary/20"
+                  }`}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {i === 0 && (
+                            <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
+                              <Flame className="h-3 w-3" /> Top Priority
+                            </Badge>
+                          )}
+                          {i === 1 && (
+                            <Badge className="bg-orange-500 text-white text-xs gap-1">
+                              <AlertTriangle className="h-3 w-3" /> High
+                            </Badge>
+                          )}
+                          {i === 2 && (
+                            <Badge variant="secondary" className="text-xs gap-1">
+                              <Sparkles className="h-3 w-3" /> Medium
+                            </Badge>
+                          )}
+                          <Badge variant={urgencyColor(a) as any} className="text-xs">
+                            {a.due_date ? (
+                              isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                              isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                              new Date(a.due_date).toLocaleDateString()
+                            ) : "No due date"}
+                          </Badge>
+                        </div>
+                        <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
+                        <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                      </div>
+                      <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                        <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Courses */}
