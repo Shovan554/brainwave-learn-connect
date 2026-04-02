@@ -525,6 +525,12 @@ export default function StudentDashboard() {
         </>
       )}
 
+      {/* Courses */}
+      <div className="mb-3 flex items-center gap-2">
+        <GraduationCap className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-display font-semibold">My Courses</h2>
+      </div>
+
       {courses.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center py-10 text-center">
