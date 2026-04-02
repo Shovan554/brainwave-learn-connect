@@ -17,7 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
-  Calendar, Trophy, TrendingUp, X,
+  Calendar, Trophy, TrendingUp, X, ChevronDown,
 } from "lucide-react";
 
 interface PrioritizedAssignment {
