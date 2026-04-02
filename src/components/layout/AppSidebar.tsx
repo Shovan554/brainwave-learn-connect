@@ -243,15 +243,14 @@ export function AppSidebar() {
           {/* Nav */}
           <ScrollArea className="flex-1">
             <nav className={collapsed ? "px-2 py-2" : "px-3 py-2"}>
-              {sections.map((section) => (
-                <SectionGroup
-                  key={section.label}
-                  section={section}
-                  collapsed={collapsed}
-                />
-              ))}
+              {/* Render Overview first */}
+              <SectionGroup
+                key={sections[0].label}
+                section={sections[0]}
+                collapsed={collapsed}
+              />
 
-              {/* My Courses */}
+              {/* My Courses – between Overview and Discover */}
               {courses.length > 0 && (
                 <div className="pt-2">
                   {collapsed ? (
@@ -313,6 +312,15 @@ export function AppSidebar() {
                   )}
                 </div>
               )}
+
+              {/* Remaining sections (Discover, Communication, etc.) */}
+              {sections.slice(1).map((section) => (
+                <SectionGroup
+                  key={section.label}
+                  section={section}
+                  collapsed={collapsed}
+                />
+              ))}
             </nav>
           </ScrollArea>
 
