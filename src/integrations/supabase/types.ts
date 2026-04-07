@@ -780,8 +780,38 @@ export type Database = {
           },
         ]
       }
+      reel_views: {
+        Row: {
+          id: string
+          reel_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          reel_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          reel_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_views_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reels: {
         Row: {
+          course_id: string | null
           created_at: string
           description: string | null
           duration_seconds: number | null
@@ -794,6 +824,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           duration_seconds?: number | null
@@ -806,6 +837,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           duration_seconds?: number | null
@@ -817,7 +849,15 @@ export type Database = {
           video_url?: string
           views_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reels_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_summaries: {
         Row: {
