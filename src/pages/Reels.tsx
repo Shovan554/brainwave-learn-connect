@@ -237,26 +237,41 @@ export default function Reels() {
   };
 
   const handleUpload = async () => {
-    if (!user || !uploadFile || !uploadTitle.trim()) return;
+    if (!user || !uploadTitle.trim()) return;
     setUploading(true);
     try {
-      const filePath = `${user.id}/${Date.now()}-${uploadFile.name}`;
-      const { error: uploadErr } = await supabase.storage.from("reels").upload(filePath, uploadFile);
-      if (uploadErr) throw uploadErr;
-      const { data: urlData } = supabase.storage.from("reels").getPublicUrl(filePath);
+      let videoUrl: string;
+
+      if (uploadMode === "youtube") {
+        if (!uploadYoutubeUrl.trim() || !extractYouTubeId(uploadYoutubeUrl)) {
+          toast.error("Please enter a valid YouTube Shorts URL");
+          setUploading(false);
+          return;
+        }
+        videoUrl = uploadYoutubeUrl.trim();
+      } else {
+        if (!uploadFile) { setUploading(false); return; }
+        const filePath = `${user.id}/${Date.now()}-${uploadFile.name}`;
+        const { error: uploadErr } = await supabase.storage.from("reels").upload(filePath, uploadFile);
+        if (uploadErr) throw uploadErr;
+        const { data: urlData } = supabase.storage.from("reels").getPublicUrl(filePath);
+        videoUrl = urlData.publicUrl;
+      }
+
       await supabase.from("reels").insert({
         uploaded_by: user.id,
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || null,
-        video_url: urlData.publicUrl,
+        video_url: videoUrl,
         course_id: (uploadCourseId && uploadCourseId !== "none") ? uploadCourseId : null,
       } as any);
-      toast.success("Reel uploaded!");
+      toast.success("Reel added!");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadTitle("");
       setUploadDesc("");
       setUploadCourseId("");
+      setUploadYoutubeUrl("");
       loadReels();
     } catch {
       toast.error("Upload failed");
