@@ -80,8 +80,12 @@ const App = () => (
             <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
+            {/* Admin */}
+            <Route path="/admin" element={<AdminAnalytics />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AnalyticsTracker />
           <FloatingAICopilot />
         </SidebarMobileProvider>
         </AuthProvider>
