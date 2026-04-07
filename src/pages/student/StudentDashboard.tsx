@@ -470,8 +470,9 @@ export default function StudentDashboard() {
           ) : (
             <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
               {assignments.slice(0, 5).map((a, i) => {
-                const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
-                const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+                const isPastDue = a.due_date && new Date(a.due_date).getTime() < Date.now();
+                const isUrgent = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+                const isSoon = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
                 return (
                   <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
                     i === 0
@@ -498,13 +499,19 @@ export default function StudentDashboard() {
                               <Sparkles className="h-3 w-3" /> Medium
                             </Badge>
                           )}
-                          <Badge variant={urgencyColor(a) as any} className="text-xs">
-                            {a.due_date ? (
-                              isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
-                              isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
-                              new Date(a.due_date).toLocaleDateString()
-                            ) : "No due date"}
-                          </Badge>
+                          {isPastDue ? (
+                            <Badge variant="destructive" className="text-xs gap-1">
+                              <FileWarning className="h-3 w-3" /> Past Due
+                            </Badge>
+                          ) : (
+                            <Badge variant={urgencyColor(a) as any} className="text-xs">
+                              {a.due_date ? (
+                                isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                                isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                                new Date(a.due_date).toLocaleDateString()
+                              ) : "No due date"}
+                            </Badge>
+                          )}
                         </div>
                         <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
                         <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
