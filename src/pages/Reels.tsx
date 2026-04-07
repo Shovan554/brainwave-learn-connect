@@ -146,10 +146,12 @@ export default function Reels() {
     }
   }, [reels, searchParams]);
 
-  // Intersection observer for snap scrolling
+  // Intersection observer for snap scrolling + view tracking
   useEffect(() => {
     const container = containerRef.current;
     if (!container || reels.length === 0) return;
+
+    const viewedSet = new Set<string>();
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -157,6 +159,17 @@ export default function Reels() {
           const index = Number(entry.target.getAttribute("data-index"));
           if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
             setActiveIndex(index);
+
+            // Track view
+            const reel = reels[index];
+            if (reel && user && !viewedSet.has(reel.id)) {
+              viewedSet.add(reel.id);
+              supabase.from("reel_views").upsert(
+                { reel_id: reel.id, user_id: user.id },
+                { onConflict: "reel_id,user_id" }
+              ).then(() => {});
+            }
+
             Object.entries(videoRefs.current).forEach(([key, video]) => {
               if (!video) return;
               if (Number(key) === index) {
@@ -178,7 +191,7 @@ export default function Reels() {
     items.forEach((item) => observer.observe(item));
 
     return () => observer.disconnect();
-  }, [reels]);
+  }, [reels, user]);
 
   const togglePlay = (index: number) => {
     const video = videoRefs.current[index];
