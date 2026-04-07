@@ -451,10 +451,46 @@ export default function Reels() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="rounded-2xl">
-                <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube")}>
+                    <TabsList className="w-full rounded-xl">
+                      <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Link className="h-3.5 w-3.5" /> YouTube Link
+                      </TabsTrigger>
+                      <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Film className="h-3.5 w-3.5" /> Upload File
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                   <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
                   <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                  {uploadMode === "youtube" ? (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
+                      <Input
+                        placeholder="https://youtube.com/shorts/..."
+                        value={uploadYoutubeUrl}
+                        onChange={e => setUploadYoutubeUrl(e.target.value)}
+                        className="rounded-xl"
+                      />
+                      {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
+                        <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
+                            className="w-full h-full"
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
+                            allowFullScreen
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Video File</label>
+                      <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                    </div>
+                  )}
                   {teacherCourses.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium mb-1">Course (optional)</label>
@@ -471,12 +507,12 @@ export default function Reels() {
                       </Select>
                     </div>
                   )}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Video File</label>
-                    <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                  </div>
-                  <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
-                    {uploading ? "Uploading..." : "Upload"}
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                    className="w-full rounded-xl"
+                  >
+                    {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
                   </Button>
                 </div>
               </DialogContent>
