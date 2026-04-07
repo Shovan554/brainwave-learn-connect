@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 interface Reel {
@@ -22,6 +23,7 @@ interface Reel {
   likes_count: number;
   views_count: number;
   created_at: string;
+  course_id: string | null;
   uploader_name?: string;
   liked_by_me?: boolean;
 }
@@ -42,12 +44,17 @@ export default function Reels() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
+  const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+  const [showViewed, setShowViewed] = useState(false);
+
+  // Teacher courses for upload selector
+  const [teacherCourses, setTeacherCourses] = useState<{ id: string; title: string }[]>([]);
 
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
@@ -57,37 +64,71 @@ export default function Reels() {
   const [shareSearchResults, setShareSearchResults] = useState<{ user_id: string; name: string }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
 
+  // Load teacher courses for upload
+  useEffect(() => {
+    if (role === "teacher" && user) {
+      supabase.from("courses").select("id, title").eq("teacher_id", user.id).then(({ data }) => {
+        setTeacherCourses(data || []);
+      });
+    }
+  }, [role, user]);
+
   const loadReels = useCallback(async () => {
-    const { data } = await supabase
-      .from("reels")
-      .select("*")
-      .order("created_at", { ascending: false });
+    if (!user) return;
 
-    if (!data) return;
+    // Fetch all reels, user's course IDs, viewed reel IDs, and likes in parallel
+    const [reelsRes, enrollRes, teacherRes, viewedRes, likesRes] = await Promise.all([
+      supabase.from("reels").select("*").order("created_at", { ascending: false }),
+      role === "student"
+        ? supabase.from("enrollments").select("course_id").eq("student_id", user.id)
+        : Promise.resolve({ data: [] as { course_id: string }[] }),
+      role === "teacher"
+        ? supabase.from("courses").select("id").eq("teacher_id", user.id)
+        : Promise.resolve({ data: [] as { id: string }[] }),
+      supabase.from("reel_views").select("reel_id").eq("user_id", user.id),
+      supabase.from("reel_likes").select("reel_id").eq("user_id", user.id),
+    ]);
 
-    const uploaderIds = [...new Set(data.map((r: any) => r.uploaded_by))];
+    const allReels = reelsRes.data || [];
+    if (!allReels.length) { setReels([]); return; }
+
+    const myCourseIds = new Set([
+      ...(enrollRes.data || []).map((e: any) => e.course_id),
+      ...(teacherRes.data || []).map((c: any) => c.id),
+    ]);
+    const viewedIds = new Set((viewedRes.data || []).map((v: any) => v.reel_id));
+    const myLikeIds = new Set((likesRes.data || []).map((l: any) => l.reel_id));
+
+    // Fetch uploader profiles
+    const uploaderIds = [...new Set(allReels.map((r: any) => r.uploaded_by))];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, name")
       .in("user_id", uploaderIds);
-
     const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
 
-    let myLikes: string[] = [];
-    if (user) {
-      const { data: likes } = await supabase
-        .from("reel_likes")
-        .select("reel_id")
-        .eq("user_id", user.id);
-      myLikes = likes?.map((l: any) => l.reel_id) || [];
-    }
+    // Build enriched reels with relevance score
+    const enriched: (Reel & { score: number; viewed: boolean })[] = allReels.map((r: any) => {
+      const isFromMyCourse = r.course_id && myCourseIds.has(r.course_id);
+      const viewed = viewedIds.has(r.id);
+      // Score: course-relevant first, then recency
+      const recency = new Date(r.created_at).getTime();
+      const score = (isFromMyCourse ? 1e15 : 0) + recency;
+      return {
+        ...r,
+        uploader_name: profileMap[r.uploaded_by] || "User",
+        liked_by_me: myLikeIds.has(r.id),
+        score,
+        viewed,
+      };
+    });
 
-    setReels(data.map((r: any) => ({
-      ...r,
-      uploader_name: profileMap[r.uploaded_by] || "User",
-      liked_by_me: myLikes.includes(r.id),
-    })));
-  }, [user]);
+    // Filter and sort
+    const filtered = showViewed ? enriched : enriched.filter(r => !r.viewed);
+    filtered.sort((a, b) => b.score - a.score);
+
+    setReels(filtered);
+  }, [user, role, showViewed]);
 
   useEffect(() => { loadReels(); }, [loadReels]);
 
@@ -105,10 +146,12 @@ export default function Reels() {
     }
   }, [reels, searchParams]);
 
-  // Intersection observer for snap scrolling
+  // Intersection observer for snap scrolling + view tracking
   useEffect(() => {
     const container = containerRef.current;
     if (!container || reels.length === 0) return;
+
+    const viewedSet = new Set<string>();
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -116,6 +159,17 @@ export default function Reels() {
           const index = Number(entry.target.getAttribute("data-index"));
           if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
             setActiveIndex(index);
+
+            // Track view
+            const reel = reels[index];
+            if (reel && user && !viewedSet.has(reel.id)) {
+              viewedSet.add(reel.id);
+              supabase.from("reel_views").upsert(
+                { reel_id: reel.id, user_id: user.id },
+                { onConflict: "reel_id,user_id" }
+              ).then(() => {});
+            }
+
             Object.entries(videoRefs.current).forEach(([key, video]) => {
               if (!video) return;
               if (Number(key) === index) {
@@ -137,7 +191,7 @@ export default function Reels() {
     items.forEach((item) => observer.observe(item));
 
     return () => observer.disconnect();
-  }, [reels]);
+  }, [reels, user]);
 
   const togglePlay = (index: number) => {
     const video = videoRefs.current[index];
@@ -175,12 +229,14 @@ export default function Reels() {
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || null,
         video_url: urlData.publicUrl,
-      });
+        course_id: (uploadCourseId && uploadCourseId !== "none") ? uploadCourseId : null,
+      } as any);
       toast.success("Reel uploaded!");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadTitle("");
       setUploadDesc("");
+      setUploadCourseId("");
       loadReels();
     } catch {
       toast.error("Upload failed");
@@ -342,29 +398,56 @@ export default function Reels() {
             <p className="text-xs text-muted-foreground">Microlearning videos</p>
           </div>
         </div>
-        {role === "teacher" && (
-          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20">
-                <Plus className="h-4 w-4" /> Upload
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-2xl">
-              <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
-                <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
-                <div>
-                  <label className="block text-sm font-medium mb-1">Video File</label>
-                  <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                </div>
-                <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
-                  {uploading ? "Uploading..." : "Upload"}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showViewed ? "secondary" : "outline"}
+            size="sm"
+            className="gap-1.5 rounded-xl text-xs"
+            onClick={() => setShowViewed(!showViewed)}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {showViewed ? "Hide Watched" : "Show Watched"}
+          </Button>
+          {role === "teacher" && (
+            <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20">
+                  <Plus className="h-4 w-4" /> Upload
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogTrigger>
+              <DialogContent className="rounded-2xl">
+                <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
+                  <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                  {teacherCourses.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Course (optional)</label>
+                      <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="General (no course)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">General (no course)</SelectItem>
+                          {teacherCourses.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Video File</label>
+                    <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                  </div>
+                  <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
+                    {uploading ? "Uploading..." : "Upload"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {reels.length === 0 ? (
@@ -373,10 +456,17 @@ export default function Reels() {
             <div className="absolute inset-0 rounded-full bg-primary/5 blur-3xl scale-150" />
             <Film className="relative h-20 w-20 mb-4 opacity-20" />
           </div>
-          <p className="text-lg font-semibold mt-2">No reels yet</p>
+          <p className="text-lg font-semibold mt-2">{showViewed ? "No reels yet" : "You're all caught up! 🎉"}</p>
           <p className="text-sm text-muted-foreground/60">
-            {role === "teacher" ? "Upload your first microlearning reel" : "Check back soon for new content"}
+            {!showViewed
+              ? "You've watched all available reels"
+              : role === "teacher" ? "Upload your first microlearning reel" : "Check back soon for new content"}
           </p>
+          {!showViewed && (
+            <Button variant="outline" className="mt-4 rounded-xl gap-1.5" onClick={() => setShowViewed(true)}>
+              <RotateCcw className="h-3.5 w-3.5" /> Rewatch Reels
+            </Button>
+          )}
         </div>
       ) : (
         <div className="flex justify-center">
