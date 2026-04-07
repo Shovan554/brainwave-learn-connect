@@ -398,29 +398,56 @@ export default function Reels() {
             <p className="text-xs text-muted-foreground">Microlearning videos</p>
           </div>
         </div>
-        {role === "teacher" && (
-          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20">
-                <Plus className="h-4 w-4" /> Upload
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-2xl">
-              <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
-                <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
-                <div>
-                  <label className="block text-sm font-medium mb-1">Video File</label>
-                  <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                </div>
-                <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
-                  {uploading ? "Uploading..." : "Upload"}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showViewed ? "secondary" : "outline"}
+            size="sm"
+            className="gap-1.5 rounded-xl text-xs"
+            onClick={() => setShowViewed(!showViewed)}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {showViewed ? "Hide Watched" : "Show Watched"}
+          </Button>
+          {role === "teacher" && (
+            <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20">
+                  <Plus className="h-4 w-4" /> Upload
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogTrigger>
+              <DialogContent className="rounded-2xl">
+                <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
+                  <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                  {teacherCourses.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Course (optional)</label>
+                      <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="General (no course)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">General (no course)</SelectItem>
+                          {teacherCourses.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Video File</label>
+                    <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                  </div>
+                  <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
+                    {uploading ? "Uploading..." : "Upload"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {reels.length === 0 ? (
