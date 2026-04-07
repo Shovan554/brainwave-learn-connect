@@ -10,8 +10,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link } from "lucide-react";
 import { toast } from "sonner";
+
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/,
+    /youtu\.be\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return !!extractYouTubeId(url);
+}
 
 interface Reel {
   id: string;
@@ -45,6 +63,8 @@ export default function Reels() {
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadCourseId, setUploadCourseId] = useState<string>("");
+  const [uploadYoutubeUrl, setUploadYoutubeUrl] = useState("");
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube">("youtube");
   const [uploading, setUploading] = useState(false);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -217,26 +237,41 @@ export default function Reels() {
   };
 
   const handleUpload = async () => {
-    if (!user || !uploadFile || !uploadTitle.trim()) return;
+    if (!user || !uploadTitle.trim()) return;
     setUploading(true);
     try {
-      const filePath = `${user.id}/${Date.now()}-${uploadFile.name}`;
-      const { error: uploadErr } = await supabase.storage.from("reels").upload(filePath, uploadFile);
-      if (uploadErr) throw uploadErr;
-      const { data: urlData } = supabase.storage.from("reels").getPublicUrl(filePath);
+      let videoUrl: string;
+
+      if (uploadMode === "youtube") {
+        if (!uploadYoutubeUrl.trim() || !extractYouTubeId(uploadYoutubeUrl)) {
+          toast.error("Please enter a valid YouTube Shorts URL");
+          setUploading(false);
+          return;
+        }
+        videoUrl = uploadYoutubeUrl.trim();
+      } else {
+        if (!uploadFile) { setUploading(false); return; }
+        const filePath = `${user.id}/${Date.now()}-${uploadFile.name}`;
+        const { error: uploadErr } = await supabase.storage.from("reels").upload(filePath, uploadFile);
+        if (uploadErr) throw uploadErr;
+        const { data: urlData } = supabase.storage.from("reels").getPublicUrl(filePath);
+        videoUrl = urlData.publicUrl;
+      }
+
       await supabase.from("reels").insert({
         uploaded_by: user.id,
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || null,
-        video_url: urlData.publicUrl,
+        video_url: videoUrl,
         course_id: (uploadCourseId && uploadCourseId !== "none") ? uploadCourseId : null,
       } as any);
-      toast.success("Reel uploaded!");
+      toast.success("Reel added!");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadTitle("");
       setUploadDesc("");
       setUploadCourseId("");
+      setUploadYoutubeUrl("");
       loadReels();
     } catch {
       toast.error("Upload failed");
@@ -416,10 +451,46 @@ export default function Reels() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="rounded-2xl">
-                <DialogHeader><DialogTitle>Upload a Reel</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube")}>
+                    <TabsList className="w-full rounded-xl">
+                      <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Link className="h-3.5 w-3.5" /> YouTube Link
+                      </TabsTrigger>
+                      <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Film className="h-3.5 w-3.5" /> Upload File
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                   <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
                   <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                  {uploadMode === "youtube" ? (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
+                      <Input
+                        placeholder="https://youtube.com/shorts/..."
+                        value={uploadYoutubeUrl}
+                        onChange={e => setUploadYoutubeUrl(e.target.value)}
+                        className="rounded-xl"
+                      />
+                      {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
+                        <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
+                            className="w-full h-full"
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
+                            allowFullScreen
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Video File</label>
+                      <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                    </div>
+                  )}
                   {teacherCourses.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium mb-1">Course (optional)</label>
@@ -436,12 +507,12 @@ export default function Reels() {
                       </Select>
                     </div>
                   )}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Video File</label>
-                    <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                  </div>
-                  <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTitle.trim()} className="w-full rounded-xl">
-                    {uploading ? "Uploading..." : "Upload"}
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                    className="w-full rounded-xl"
+                  >
+                    {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
                   </Button>
                 </div>
               </DialogContent>
@@ -483,26 +554,37 @@ export default function Reels() {
               >
                 {/* Video */}
                 <div className="absolute inset-0 bg-black rounded-2xl overflow-hidden">
-                  <video
-                    ref={(el) => { videoRefs.current[index] = el; }}
-                    src={reel.video_url}
-                    className="w-full h-full object-cover cursor-pointer"
-                    loop
-                    playsInline
-                    muted={muted}
-                    onClick={() => togglePlay(index)}
-                  />
+                  {isYouTubeUrl(reel.video_url) ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${extractYouTubeId(reel.video_url)}?autoplay=${index === activeIndex ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${extractYouTubeId(reel.video_url)}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <>
+                      <video
+                        ref={(el) => { videoRefs.current[index] = el; }}
+                        src={reel.video_url}
+                        className="w-full h-full object-cover cursor-pointer"
+                        loop
+                        playsInline
+                        muted={muted}
+                        onClick={() => togglePlay(index)}
+                      />
 
-                  {/* Paused overlay */}
-                  {!playingStates[index] && (
-                    <div
-                      className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity duration-300"
-                      onClick={() => togglePlay(index)}
-                    >
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
-                        <Play className="h-8 w-8 text-white ml-1" fill="white" />
-                      </div>
-                    </div>
+                      {/* Paused overlay */}
+                      {!playingStates[index] && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity duration-300"
+                          onClick={() => togglePlay(index)}
+                        >
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                            <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Gradient overlays */}
