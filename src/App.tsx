@@ -8,6 +8,8 @@ import { SidebarMobileProvider } from "@/hooks/useSidebarMobile";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FloatingAICopilot } from "@/components/FloatingAICopilot";
+import { useAnalyticsTracking } from "@/hooks/useAnalyticsTracking";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
