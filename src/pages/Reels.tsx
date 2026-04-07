@@ -44,12 +44,17 @@ export default function Reels() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
+  const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+  const [showViewed, setShowViewed] = useState(false);
+
+  // Teacher courses for upload selector
+  const [teacherCourses, setTeacherCourses] = useState<{ id: string; title: string }[]>([]);
 
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
@@ -59,37 +64,71 @@ export default function Reels() {
   const [shareSearchResults, setShareSearchResults] = useState<{ user_id: string; name: string }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
 
+  // Load teacher courses for upload
+  useEffect(() => {
+    if (role === "teacher" && user) {
+      supabase.from("courses").select("id, title").eq("teacher_id", user.id).then(({ data }) => {
+        setTeacherCourses(data || []);
+      });
+    }
+  }, [role, user]);
+
   const loadReels = useCallback(async () => {
-    const { data } = await supabase
-      .from("reels")
-      .select("*")
-      .order("created_at", { ascending: false });
+    if (!user) return;
 
-    if (!data) return;
+    // Fetch all reels, user's course IDs, viewed reel IDs, and likes in parallel
+    const [reelsRes, enrollRes, teacherRes, viewedRes, likesRes] = await Promise.all([
+      supabase.from("reels").select("*").order("created_at", { ascending: false }),
+      role === "student"
+        ? supabase.from("enrollments").select("course_id").eq("student_id", user.id)
+        : Promise.resolve({ data: [] as { course_id: string }[] }),
+      role === "teacher"
+        ? supabase.from("courses").select("id").eq("teacher_id", user.id)
+        : Promise.resolve({ data: [] as { id: string }[] }),
+      supabase.from("reel_views").select("reel_id").eq("user_id", user.id),
+      supabase.from("reel_likes").select("reel_id").eq("user_id", user.id),
+    ]);
 
-    const uploaderIds = [...new Set(data.map((r: any) => r.uploaded_by))];
+    const allReels = reelsRes.data || [];
+    if (!allReels.length) { setReels([]); return; }
+
+    const myCourseIds = new Set([
+      ...(enrollRes.data || []).map((e: any) => e.course_id),
+      ...(teacherRes.data || []).map((c: any) => c.id),
+    ]);
+    const viewedIds = new Set((viewedRes.data || []).map((v: any) => v.reel_id));
+    const myLikeIds = new Set((likesRes.data || []).map((l: any) => l.reel_id));
+
+    // Fetch uploader profiles
+    const uploaderIds = [...new Set(allReels.map((r: any) => r.uploaded_by))];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, name")
       .in("user_id", uploaderIds);
-
     const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
 
-    let myLikes: string[] = [];
-    if (user) {
-      const { data: likes } = await supabase
-        .from("reel_likes")
-        .select("reel_id")
-        .eq("user_id", user.id);
-      myLikes = likes?.map((l: any) => l.reel_id) || [];
-    }
+    // Build enriched reels with relevance score
+    const enriched: (Reel & { score: number; viewed: boolean })[] = allReels.map((r: any) => {
+      const isFromMyCourse = r.course_id && myCourseIds.has(r.course_id);
+      const viewed = viewedIds.has(r.id);
+      // Score: course-relevant first, then recency
+      const recency = new Date(r.created_at).getTime();
+      const score = (isFromMyCourse ? 1e15 : 0) + recency;
+      return {
+        ...r,
+        uploader_name: profileMap[r.uploaded_by] || "User",
+        liked_by_me: myLikeIds.has(r.id),
+        score,
+        viewed,
+      };
+    });
 
-    setReels(data.map((r: any) => ({
-      ...r,
-      uploader_name: profileMap[r.uploaded_by] || "User",
-      liked_by_me: myLikes.includes(r.id),
-    })));
-  }, [user]);
+    // Filter and sort
+    const filtered = showViewed ? enriched : enriched.filter(r => !r.viewed);
+    filtered.sort((a, b) => b.score - a.score);
+
+    setReels(filtered);
+  }, [user, role, showViewed]);
 
   useEffect(() => { loadReels(); }, [loadReels]);
 
