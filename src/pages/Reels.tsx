@@ -586,8 +586,6 @@ export default function Reels() {
                       )}
                     </>
                   )}
-                    </div>
-                  )}
 
                   {/* Gradient overlays */}
                   <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
