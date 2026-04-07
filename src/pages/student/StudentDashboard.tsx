@@ -119,17 +119,15 @@ export default function StudentDashboard() {
       .sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
     setPastDue(pastDueList);
 
-    // Upcoming (not past due)
+    // All unsubmitted (including past due)
     const prioritized: PrioritizedAssignment[] = allAssignments
-      .filter(a => {
-        if (submittedIds.has(a.id)) return false;
-        if (!a.due_date) return true;
-        return new Date(a.due_date).getTime() > now;
-      })
+      .filter(a => !submittedIds.has(a.id))
       .map(a => {
         const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
         const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
-        const urgency = Math.max(1, (dueMs - now) / (1000 * 60 * 60));
+        const isPastDue = a.due_date && dueMs < now;
+        // Past due items get highest priority (large score)
+        const urgency = isPastDue ? 0.1 : Math.max(1, (dueMs - now) / (1000 * 60 * 60));
         const score = ((a.weight || 1) * (a.points || 1)) / (urgency * Math.max(1, a.estimated_time_minutes || 30));
         return { ...a, course_title: courseName, priority_score: score };
       })
