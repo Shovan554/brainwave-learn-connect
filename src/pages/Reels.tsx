@@ -23,6 +23,7 @@ interface Reel {
   likes_count: number;
   views_count: number;
   created_at: string;
+  course_id: string | null;
   uploader_name?: string;
   liked_by_me?: boolean;
 }
