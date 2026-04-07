@@ -214,6 +214,42 @@ export type Database = {
         }
         Relationships: []
       }
+      click_events: {
+        Row: {
+          created_at: string
+          element_class: string | null
+          element_id: string | null
+          element_tag: string
+          element_text: string | null
+          id: string
+          page_path: string
+          user_id: string
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          element_class?: string | null
+          element_id?: string | null
+          element_tag: string
+          element_text?: string | null
+          id?: string
+          page_path: string
+          user_id: string
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          element_class?: string | null
+          element_id?: string | null
+          element_tag?: string
+          element_text?: string | null
+          id?: string
+          page_path?: string
+          user_id?: string
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       content_reports: {
         Row: {
           course_id: string
@@ -528,6 +564,30 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          page_path: string
+          user_id: string
+          user_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_path: string
+          user_id: string
+          user_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          user_id?: string
+          user_role?: string | null
         }
         Relationships: []
       }
