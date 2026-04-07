@@ -229,7 +229,7 @@ export default function Reels() {
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || null,
         video_url: urlData.publicUrl,
-        course_id: uploadCourseId || null,
+        course_id: (uploadCourseId && uploadCourseId !== "none") ? uploadCourseId : null,
       } as any);
       toast.success("Reel uploaded!");
       setUploadOpen(false);
