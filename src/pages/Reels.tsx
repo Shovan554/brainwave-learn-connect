@@ -554,25 +554,38 @@ export default function Reels() {
               >
                 {/* Video */}
                 <div className="absolute inset-0 bg-black rounded-2xl overflow-hidden">
-                  <video
-                    ref={(el) => { videoRefs.current[index] = el; }}
-                    src={reel.video_url}
-                    className="w-full h-full object-cover cursor-pointer"
-                    loop
-                    playsInline
-                    muted={muted}
-                    onClick={() => togglePlay(index)}
-                  />
+                  {isYouTubeUrl(reel.video_url) ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${extractYouTubeId(reel.video_url)}?autoplay=${index === activeIndex ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${extractYouTubeId(reel.video_url)}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <>
+                      <video
+                        ref={(el) => { videoRefs.current[index] = el; }}
+                        src={reel.video_url}
+                        className="w-full h-full object-cover cursor-pointer"
+                        loop
+                        playsInline
+                        muted={muted}
+                        onClick={() => togglePlay(index)}
+                      />
 
-                  {/* Paused overlay */}
-                  {!playingStates[index] && (
-                    <div
-                      className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity duration-300"
-                      onClick={() => togglePlay(index)}
-                    >
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
-                        <Play className="h-8 w-8 text-white ml-1" fill="white" />
-                      </div>
+                      {/* Paused overlay */}
+                      {!playingStates[index] && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity duration-300"
+                          onClick={() => togglePlay(index)}
+                        >
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                            <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                     </div>
                   )}
 
