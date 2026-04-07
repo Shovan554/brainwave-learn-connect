@@ -32,6 +32,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function AnalyticsTracker() {
+  useAnalyticsTracking();
+  return null;
+}
+
 function RootRedirect() {
   const { user, role, loading } = useAuth();
   if (loading) return null;
