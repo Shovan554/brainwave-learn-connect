@@ -229,12 +229,14 @@ export default function Reels() {
         title: uploadTitle.trim(),
         description: uploadDesc.trim() || null,
         video_url: urlData.publicUrl,
-      });
+        course_id: uploadCourseId || null,
+      } as any);
       toast.success("Reel uploaded!");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadTitle("");
       setUploadDesc("");
+      setUploadCourseId("");
       loadReels();
     } catch {
       toast.error("Upload failed");
