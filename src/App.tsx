@@ -8,6 +8,8 @@ import { SidebarMobileProvider } from "@/hooks/useSidebarMobile";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FloatingAICopilot } from "@/components/FloatingAICopilot";
+import { useAnalyticsTracking } from "@/hooks/useAnalyticsTracking";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -29,6 +31,11 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function AnalyticsTracker() {
+  useAnalyticsTracking();
+  return null;
+}
 
 function RootRedirect() {
   const { user, role, loading } = useAuth();
@@ -73,8 +80,12 @@ const App = () => (
             <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
+            {/* Admin */}
+            <Route path="/admin" element={<AdminAnalytics />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AnalyticsTracker />
           <FloatingAICopilot />
         </SidebarMobileProvider>
         </AuthProvider>
