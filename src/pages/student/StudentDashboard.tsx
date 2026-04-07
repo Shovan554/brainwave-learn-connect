@@ -119,17 +119,15 @@ export default function StudentDashboard() {
       .sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
     setPastDue(pastDueList);
 
-    // Upcoming (not past due)
+    // All unsubmitted (including past due)
     const prioritized: PrioritizedAssignment[] = allAssignments
-      .filter(a => {
-        if (submittedIds.has(a.id)) return false;
-        if (!a.due_date) return true;
-        return new Date(a.due_date).getTime() > now;
-      })
+      .filter(a => !submittedIds.has(a.id))
       .map(a => {
         const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
         const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
-        const urgency = Math.max(1, (dueMs - now) / (1000 * 60 * 60));
+        const isPastDue = a.due_date && dueMs < now;
+        // Past due items get highest priority (large score)
+        const urgency = isPastDue ? 0.1 : Math.max(1, (dueMs - now) / (1000 * 60 * 60));
         const score = ((a.weight || 1) * (a.points || 1)) / (urgency * Math.max(1, a.estimated_time_minutes || 30));
         return { ...a, course_title: courseName, priority_score: score };
       })
@@ -472,8 +470,9 @@ export default function StudentDashboard() {
           ) : (
             <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
               {assignments.slice(0, 5).map((a, i) => {
-                const isUrgent = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
-                const isSoon = a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+                const isPastDue = a.due_date && new Date(a.due_date).getTime() < Date.now();
+                const isUrgent = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+                const isSoon = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
                 return (
                   <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
                     i === 0
@@ -500,13 +499,19 @@ export default function StudentDashboard() {
                               <Sparkles className="h-3 w-3" /> Medium
                             </Badge>
                           )}
-                          <Badge variant={urgencyColor(a) as any} className="text-xs">
-                            {a.due_date ? (
-                              isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
-                              isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
-                              new Date(a.due_date).toLocaleDateString()
-                            ) : "No due date"}
-                          </Badge>
+                          {isPastDue ? (
+                            <Badge variant="destructive" className="text-xs gap-1">
+                              <FileWarning className="h-3 w-3" /> Past Due
+                            </Badge>
+                          ) : (
+                            <Badge variant={urgencyColor(a) as any} className="text-xs">
+                              {a.due_date ? (
+                                isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                                isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                                new Date(a.due_date).toLocaleDateString()
+                              ) : "No due date"}
+                            </Badge>
+                          )}
                         </div>
                         <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
                         <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
