@@ -456,10 +456,17 @@ export default function Reels() {
             <div className="absolute inset-0 rounded-full bg-primary/5 blur-3xl scale-150" />
             <Film className="relative h-20 w-20 mb-4 opacity-20" />
           </div>
-          <p className="text-lg font-semibold mt-2">No reels yet</p>
+          <p className="text-lg font-semibold mt-2">{showViewed ? "No reels yet" : "You're all caught up! 🎉"}</p>
           <p className="text-sm text-muted-foreground/60">
-            {role === "teacher" ? "Upload your first microlearning reel" : "Check back soon for new content"}
+            {!showViewed
+              ? "You've watched all available reels"
+              : role === "teacher" ? "Upload your first microlearning reel" : "Check back soon for new content"}
           </p>
+          {!showViewed && (
+            <Button variant="outline" className="mt-4 rounded-xl gap-1.5" onClick={() => setShowViewed(true)}>
+              <RotateCcw className="h-3.5 w-3.5" /> Rewatch Reels
+            </Button>
+          )}
         </div>
       ) : (
         <div className="flex justify-center">
