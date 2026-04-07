@@ -10,8 +10,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link } from "lucide-react";
 import { toast } from "sonner";
+
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/,
+    /youtu\.be\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return !!extractYouTubeId(url);
+}
 
 interface Reel {
   id: string;
