@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link } from "lucide-react";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 function extractYouTubeId(url: string): string | null {
@@ -29,6 +30,36 @@ function extractYouTubeId(url: string): string | null {
 
 function isYouTubeUrl(url: string): boolean {
   return !!extractYouTubeId(url);
+}
+
+function isGeneratedReel(url: string): boolean {
+  return url.startsWith("generated://");
+}
+
+function parseGeneratedContent(url: string): { hook: string; script: string; color_theme: string } | null {
+  if (!url.startsWith("generated://")) return null;
+  try {
+    return JSON.parse(decodeURIComponent(url.slice("generated://".length)));
+  } catch {
+    return null;
+  }
+}
+
+const GENERATED_COLORS: Record<string, { bg: string; accent: string }> = {
+  blue: { bg: "from-blue-600 via-blue-800 to-indigo-900", accent: "text-blue-200" },
+  purple: { bg: "from-purple-600 via-purple-800 to-indigo-900", accent: "text-purple-200" },
+  green: { bg: "from-emerald-600 via-emerald-800 to-teal-900", accent: "text-emerald-200" },
+  orange: { bg: "from-orange-500 via-orange-700 to-red-900", accent: "text-orange-200" },
+  red: { bg: "from-red-500 via-red-700 to-rose-900", accent: "text-red-200" },
+  pink: { bg: "from-pink-500 via-pink-700 to-purple-900", accent: "text-pink-200" },
+};
+
+interface ReelSuggestion {
+  title: string;
+  script: string;
+  hook: string;
+  topic: string;
+  color_theme: string;
 }
 
 interface Reel {
@@ -64,8 +95,12 @@ export default function Reels() {
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploadYoutubeUrl, setUploadYoutubeUrl] = useState("");
-  const [uploadMode, setUploadMode] = useState<"file" | "youtube">("youtube");
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "generate">("youtube");
   const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateCourseId, setGenerateCourseId] = useState("");
+  const [suggestions, setSuggestions] = useState<ReelSuggestion[]>([]);
+  const [publishingSuggestion, setPublishingSuggestion] = useState<number | null>(null);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
@@ -280,6 +315,67 @@ export default function Reels() {
     }
   };
 
+  const generateReels = async () => {
+    if (!generateCourseId) {
+      toast.error("Please select a course");
+      return;
+    }
+    setGenerating(true);
+    setSuggestions([]);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-reel-content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ courseId: generateCourseId }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Generation failed" }));
+        toast.error(err.error || "Failed to generate reels");
+        return;
+      }
+      const data = await resp.json();
+      setSuggestions(data.suggestions || []);
+      if (!data.suggestions?.length) toast.info("No suggestions generated");
+    } catch {
+      toast.error("Failed to generate reel suggestions");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const publishSuggestion = async (index: number) => {
+    if (!user) return;
+    const s = suggestions[index];
+    if (!s) return;
+    setPublishingSuggestion(index);
+    try {
+      const generatedUrl = `generated://${encodeURIComponent(JSON.stringify({
+        hook: s.hook,
+        script: s.script,
+        color_theme: s.color_theme,
+      }))}`;
+
+      await supabase.from("reels").insert({
+        uploaded_by: user.id,
+        title: s.title,
+        description: s.script,
+        video_url: generatedUrl,
+        course_id: generateCourseId || null,
+      } as any);
+
+      toast.success(`"${s.title}" published!`);
+      setSuggestions(prev => prev.filter((_, i) => i !== index));
+      loadReels();
+    } catch {
+      toast.error("Failed to publish reel");
+    } finally {
+      setPublishingSuggestion(null);
+    }
+  };
+
   // Share functionality
   const openShareDialog = async (reel: Reel) => {
     setShareReel(reel);
@@ -450,70 +546,151 @@ export default function Reels() {
                   <Plus className="h-4 w-4" /> Upload
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl">
+               <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
-                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube")}>
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "generate")}>
                     <TabsList className="w-full rounded-xl">
                       <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
-                        <Link className="h-3.5 w-3.5" /> YouTube Link
+                        <Link className="h-3.5 w-3.5" /> YouTube
                       </TabsTrigger>
                       <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
-                        <Film className="h-3.5 w-3.5" /> Upload File
+                        <Film className="h-3.5 w-3.5" /> Upload
+                      </TabsTrigger>
+                      <TabsTrigger value="generate" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Sparkles className="h-3.5 w-3.5" /> AI Generate
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
-                  <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
-                  {uploadMode === "youtube" ? (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
-                      <Input
-                        placeholder="https://youtube.com/shorts/..."
-                        value={uploadYoutubeUrl}
-                        onChange={e => setUploadYoutubeUrl(e.target.value)}
-                        className="rounded-xl"
-                      />
-                      {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
-                        <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
-                          <iframe
-                            src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
-                            className="w-full h-full"
-                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
-                            allowFullScreen
-                          />
+
+                  {uploadMode === "generate" ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Select Course</label>
+                        <Select value={generateCourseId} onValueChange={setGenerateCourseId}>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Choose a course..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teacherCourses.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        onClick={generateReels}
+                        disabled={generating || !generateCourseId}
+                        className="w-full rounded-xl gap-2"
+                      >
+                        {generating ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing syllabus...</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Generate Reel Ideas</>
+                        )}
+                      </Button>
+
+                      {suggestions.length > 0 && (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {suggestions.length} suggestion{suggestions.length !== 1 ? "s" : ""} — approve to publish
+                          </p>
+                          {suggestions.map((s, i) => {
+                            const colors = GENERATED_COLORS[s.color_theme] || GENERATED_COLORS.blue;
+                            return (
+                              <div key={i} className="rounded-xl border border-border overflow-hidden">
+                                <div className={`bg-gradient-to-br ${colors.bg} p-3`}>
+                                  <p className="text-white/60 text-[10px] font-medium uppercase tracking-wider">{s.topic}</p>
+                                  <p className="text-white text-xs font-bold mt-0.5 italic">"{s.hook}"</p>
+                                </div>
+                                <div className="p-3 space-y-2">
+                                  <p className="text-sm font-semibold">{s.title}</p>
+                                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line line-clamp-4">{s.script}</p>
+                                  <div className="flex gap-2 pt-1">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 rounded-lg gap-1.5 h-8 text-xs"
+                                      onClick={() => publishSuggestion(i)}
+                                      disabled={publishingSuggestion === i}
+                                    >
+                                      {publishingSuggestion === i ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3 w-3" />
+                                      )}
+                                      Approve & Post
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="rounded-lg h-8 text-xs text-muted-foreground"
+                                      onClick={() => setSuggestions(prev => prev.filter((_, j) => j !== i))}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Video File</label>
-                      <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                    </div>
+                    <>
+                      <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
+                      <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                      {uploadMode === "youtube" ? (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
+                          <Input
+                            placeholder="https://youtube.com/shorts/..."
+                            value={uploadYoutubeUrl}
+                            onChange={e => setUploadYoutubeUrl(e.target.value)}
+                            className="rounded-xl"
+                          />
+                          {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
+                            <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
+                              <iframe
+                                src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
+                                className="w-full h-full"
+                                allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Video File</label>
+                          <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                        </div>
+                      )}
+                      {teacherCourses.length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Course (optional)</label>
+                          <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue placeholder="General (no course)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">General (no course)</SelectItem>
+                              {teacherCourses.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <Button
+                        onClick={handleUpload}
+                        disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                        className="w-full rounded-xl"
+                      >
+                        {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
+                      </Button>
+                    </>
                   )}
-                  {teacherCourses.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Course (optional)</label>
-                      <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="General (no course)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">General (no course)</SelectItem>
-                          {teacherCourses.map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
-                    className="w-full rounded-xl"
-                  >
-                    {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
-                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -552,17 +729,39 @@ export default function Reels() {
                 data-index={index}
                 className="relative w-full h-full snap-start snap-always flex-shrink-0"
               >
-                {/* Video */}
-                <div className="absolute inset-0 bg-black rounded-2xl overflow-hidden">
-                  {isYouTubeUrl(reel.video_url) ? (
+                {/* Video / Generated Content */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                  {isGeneratedReel(reel.video_url) ? (() => {
+                    const content = parseGeneratedContent(reel.video_url);
+                    const colors = GENERATED_COLORS[content?.color_theme || "blue"] || GENERATED_COLORS.blue;
+                    return (
+                      <div className={`w-full h-full bg-gradient-to-br ${colors.bg} flex flex-col justify-center items-center p-8 text-center`}>
+                        <div className="absolute top-5 left-5">
+                          <Badge variant="secondary" className="bg-white/15 text-white/80 border-0 gap-1 text-[10px]">
+                            <Sparkles className="h-3 w-3" /> AI Generated
+                          </Badge>
+                        </div>
+                        <BookOpen className="h-10 w-10 text-white/30 mb-4" />
+                        {content?.hook && (
+                          <p className={`text-lg font-bold ${colors.accent} mb-4 italic`}>"{content.hook}"</p>
+                        )}
+                        <p className="text-white text-sm font-semibold mb-4 leading-relaxed">{reel.title}</p>
+                        {content?.script && (
+                          <p className="text-white/70 text-xs leading-relaxed whitespace-pre-line max-w-[300px]">
+                            {content.script}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })() : isYouTubeUrl(reel.video_url) ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${extractYouTubeId(reel.video_url)}?autoplay=${index === activeIndex ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${extractYouTubeId(reel.video_url)}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                      className="w-full h-full"
+                      className="w-full h-full bg-black"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
                   ) : (
-                    <>
+                    <div className="bg-black w-full h-full">
                       <video
                         ref={(el) => { videoRefs.current[index] = el; }}
                         src={reel.video_url}
@@ -584,13 +783,16 @@ export default function Reels() {
                           </div>
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
 
-                {/* Gradient overlays */}
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                {!isGeneratedReel(reel.video_url) && (
+                  <>
+                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                  </>
+                )}
 
                   {/* Top bar */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
