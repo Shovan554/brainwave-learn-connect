@@ -546,70 +546,151 @@ export default function Reels() {
                   <Plus className="h-4 w-4" /> Upload
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl">
+               <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
-                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube")}>
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "generate")}>
                     <TabsList className="w-full rounded-xl">
                       <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
-                        <Link className="h-3.5 w-3.5" /> YouTube Link
+                        <Link className="h-3.5 w-3.5" /> YouTube
                       </TabsTrigger>
                       <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
-                        <Film className="h-3.5 w-3.5" /> Upload File
+                        <Film className="h-3.5 w-3.5" /> Upload
+                      </TabsTrigger>
+                      <TabsTrigger value="generate" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Sparkles className="h-3.5 w-3.5" /> AI Generate
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
-                  <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
-                  {uploadMode === "youtube" ? (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
-                      <Input
-                        placeholder="https://youtube.com/shorts/..."
-                        value={uploadYoutubeUrl}
-                        onChange={e => setUploadYoutubeUrl(e.target.value)}
-                        className="rounded-xl"
-                      />
-                      {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
-                        <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
-                          <iframe
-                            src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
-                            className="w-full h-full"
-                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
-                            allowFullScreen
-                          />
+
+                  {uploadMode === "generate" ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Select Course</label>
+                        <Select value={generateCourseId} onValueChange={setGenerateCourseId}>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Choose a course..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teacherCourses.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        onClick={generateReels}
+                        disabled={generating || !generateCourseId}
+                        className="w-full rounded-xl gap-2"
+                      >
+                        {generating ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing syllabus...</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Generate Reel Ideas</>
+                        )}
+                      </Button>
+
+                      {suggestions.length > 0 && (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {suggestions.length} suggestion{suggestions.length !== 1 ? "s" : ""} — approve to publish
+                          </p>
+                          {suggestions.map((s, i) => {
+                            const colors = GENERATED_COLORS[s.color_theme] || GENERATED_COLORS.blue;
+                            return (
+                              <div key={i} className="rounded-xl border border-border overflow-hidden">
+                                <div className={`bg-gradient-to-br ${colors.bg} p-3`}>
+                                  <p className="text-white/60 text-[10px] font-medium uppercase tracking-wider">{s.topic}</p>
+                                  <p className="text-white text-xs font-bold mt-0.5 italic">"{s.hook}"</p>
+                                </div>
+                                <div className="p-3 space-y-2">
+                                  <p className="text-sm font-semibold">{s.title}</p>
+                                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line line-clamp-4">{s.script}</p>
+                                  <div className="flex gap-2 pt-1">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 rounded-lg gap-1.5 h-8 text-xs"
+                                      onClick={() => publishSuggestion(i)}
+                                      disabled={publishingSuggestion === i}
+                                    >
+                                      {publishingSuggestion === i ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3 w-3" />
+                                      )}
+                                      Approve & Post
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="rounded-lg h-8 text-xs text-muted-foreground"
+                                      onClick={() => setSuggestions(prev => prev.filter((_, j) => j !== i))}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Video File</label>
-                      <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
-                    </div>
+                    <>
+                      <Input placeholder="Title" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="rounded-xl" />
+                      <Textarea placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} className="rounded-xl" />
+                      {uploadMode === "youtube" ? (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">YouTube Shorts URL</label>
+                          <Input
+                            placeholder="https://youtube.com/shorts/..."
+                            value={uploadYoutubeUrl}
+                            onChange={e => setUploadYoutubeUrl(e.target.value)}
+                            className="rounded-xl"
+                          />
+                          {uploadYoutubeUrl && extractYouTubeId(uploadYoutubeUrl) && (
+                            <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[200px] bg-black">
+                              <iframe
+                                src={`https://www.youtube.com/embed/${extractYouTubeId(uploadYoutubeUrl)}?autoplay=0`}
+                                className="w-full h-full"
+                                allow="accelerometer; clipboard-write; encrypted-media; gyroscope"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Video File</label>
+                          <Input type="file" accept="video/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} className="rounded-xl" />
+                        </div>
+                      )}
+                      {teacherCourses.length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Course (optional)</label>
+                          <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue placeholder="General (no course)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">General (no course)</SelectItem>
+                              {teacherCourses.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <Button
+                        onClick={handleUpload}
+                        disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                        className="w-full rounded-xl"
+                      >
+                        {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
+                      </Button>
+                    </>
                   )}
-                  {teacherCourses.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Course (optional)</label>
-                      <Select value={uploadCourseId} onValueChange={setUploadCourseId}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="General (no course)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">General (no course)</SelectItem>
-                          {teacherCourses.map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
-                    className="w-full rounded-xl"
-                  >
-                    {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
-                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
