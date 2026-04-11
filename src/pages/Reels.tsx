@@ -787,9 +787,12 @@ export default function Reels() {
                   )}
                 </div>
 
-                {/* Gradient overlays */}
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                {!isGeneratedReel(reel.video_url) && (
+                  <>
+                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                  </>
+                )}
 
                   {/* Top bar */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
