@@ -150,3 +150,32 @@
 .prose td {
   @apply p-2 border-b border-border/30;
 }
+
+/* Generated Reel Animations */
+@keyframes genReelBgShift {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  33% { transform: scale(1.05) rotate(1deg); }
+  66% { transform: scale(1.02) rotate(-1deg); }
+}
+
+@keyframes genReelFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -40px) scale(1.2); }
+}
+
+@keyframes genReelFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, 30px) scale(1.15); }
+}
+
+@keyframes genReelParticle {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.08; }
+  25% { transform: translateY(-15px) rotate(5deg); opacity: 0.15; }
+  50% { transform: translateY(-8px) rotate(-3deg); opacity: 0.12; }
+  75% { transform: translateY(-20px) rotate(8deg); opacity: 0.06; }
+}
+
+@keyframes genReelSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
