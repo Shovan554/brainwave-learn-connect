@@ -95,7 +95,12 @@ export default function Reels() {
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploadYoutubeUrl, setUploadYoutubeUrl] = useState("");
-  const [uploadMode, setUploadMode] = useState<"file" | "youtube">("youtube");
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "generate">("youtube");
+  const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateCourseId, setGenerateCourseId] = useState("");
+  const [suggestions, setSuggestions] = useState<ReelSuggestion[]>([]);
+  const [publishingSuggestion, setPublishingSuggestion] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
