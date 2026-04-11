@@ -101,7 +101,6 @@ export default function Reels() {
   const [generateCourseId, setGenerateCourseId] = useState("");
   const [suggestions, setSuggestions] = useState<ReelSuggestion[]>([]);
   const [publishingSuggestion, setPublishingSuggestion] = useState<number | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [muted, setMuted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
