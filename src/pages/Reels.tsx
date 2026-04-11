@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link } from "lucide-react";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 function extractYouTubeId(url: string): string | null {
