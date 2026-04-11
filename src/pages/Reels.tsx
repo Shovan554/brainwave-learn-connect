@@ -729,17 +729,39 @@ export default function Reels() {
                 data-index={index}
                 className="relative w-full h-full snap-start snap-always flex-shrink-0"
               >
-                {/* Video */}
-                <div className="absolute inset-0 bg-black rounded-2xl overflow-hidden">
-                  {isYouTubeUrl(reel.video_url) ? (
+                {/* Video / Generated Content */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                  {isGeneratedReel(reel.video_url) ? (() => {
+                    const content = parseGeneratedContent(reel.video_url);
+                    const colors = GENERATED_COLORS[content?.color_theme || "blue"] || GENERATED_COLORS.blue;
+                    return (
+                      <div className={`w-full h-full bg-gradient-to-br ${colors.bg} flex flex-col justify-center items-center p-8 text-center`}>
+                        <div className="absolute top-5 left-5">
+                          <Badge variant="secondary" className="bg-white/15 text-white/80 border-0 gap-1 text-[10px]">
+                            <Sparkles className="h-3 w-3" /> AI Generated
+                          </Badge>
+                        </div>
+                        <BookOpen className="h-10 w-10 text-white/30 mb-4" />
+                        {content?.hook && (
+                          <p className={`text-lg font-bold ${colors.accent} mb-4 italic`}>"{content.hook}"</p>
+                        )}
+                        <p className="text-white text-sm font-semibold mb-4 leading-relaxed">{reel.title}</p>
+                        {content?.script && (
+                          <p className="text-white/70 text-xs leading-relaxed whitespace-pre-line max-w-[300px]">
+                            {content.script}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })() : isYouTubeUrl(reel.video_url) ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${extractYouTubeId(reel.video_url)}?autoplay=${index === activeIndex ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${extractYouTubeId(reel.video_url)}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-                      className="w-full h-full"
+                      className="w-full h-full bg-black"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
                   ) : (
-                    <>
+                    <div className="bg-black w-full h-full">
                       <video
                         ref={(el) => { videoRefs.current[index] = el; }}
                         src={reel.video_url}
@@ -761,7 +783,7 @@ export default function Reels() {
                           </div>
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
 
