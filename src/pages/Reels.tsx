@@ -315,6 +315,67 @@ export default function Reels() {
     }
   };
 
+  const generateReels = async () => {
+    if (!generateCourseId) {
+      toast.error("Please select a course");
+      return;
+    }
+    setGenerating(true);
+    setSuggestions([]);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-reel-content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ courseId: generateCourseId }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Generation failed" }));
+        toast.error(err.error || "Failed to generate reels");
+        return;
+      }
+      const data = await resp.json();
+      setSuggestions(data.suggestions || []);
+      if (!data.suggestions?.length) toast.info("No suggestions generated");
+    } catch {
+      toast.error("Failed to generate reel suggestions");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const publishSuggestion = async (index: number) => {
+    if (!user) return;
+    const s = suggestions[index];
+    if (!s) return;
+    setPublishingSuggestion(index);
+    try {
+      const generatedUrl = `generated://${encodeURIComponent(JSON.stringify({
+        hook: s.hook,
+        script: s.script,
+        color_theme: s.color_theme,
+      }))}`;
+
+      await supabase.from("reels").insert({
+        uploaded_by: user.id,
+        title: s.title,
+        description: s.script,
+        video_url: generatedUrl,
+        course_id: generateCourseId || null,
+      } as any);
+
+      toast.success(`"${s.title}" published!`);
+      setSuggestions(prev => prev.filter((_, i) => i !== index));
+      loadReels();
+    } catch {
+      toast.error("Failed to publish reel");
+    } finally {
+      setPublishingSuggestion(null);
+    }
+  };
+
   // Share functionality
   const openShareDialog = async (reel: Reel) => {
     setShareReel(reel);
