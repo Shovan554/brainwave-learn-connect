@@ -734,25 +734,14 @@ export default function Reels() {
                 <div className="absolute inset-0 rounded-2xl overflow-hidden">
                   {isGeneratedReel(reel.video_url) ? (() => {
                     const content = parseGeneratedContent(reel.video_url);
-                    const colors = GENERATED_COLORS[content?.color_theme || "blue"] || GENERATED_COLORS.blue;
                     return (
-                      <div className={`w-full h-full bg-gradient-to-br ${colors.bg} flex flex-col justify-center items-center p-8 text-center`}>
-                        <div className="absolute top-5 left-5">
-                          <Badge variant="secondary" className="bg-white/15 text-white/80 border-0 gap-1 text-[10px]">
-                            <Sparkles className="h-3 w-3" /> AI Generated
-                          </Badge>
-                        </div>
-                        <BookOpen className="h-10 w-10 text-white/30 mb-4" />
-                        {content?.hook && (
-                          <p className={`text-lg font-bold ${colors.accent} mb-4 italic`}>"{content.hook}"</p>
-                        )}
-                        <p className="text-white text-sm font-semibold mb-4 leading-relaxed">{reel.title}</p>
-                        {content?.script && (
-                          <p className="text-white/70 text-xs leading-relaxed whitespace-pre-line max-w-[300px]">
-                            {content.script}
-                          </p>
-                        )}
-                      </div>
+                      <GeneratedReelCard
+                        title={reel.title}
+                        hook={content?.hook || ""}
+                        script={content?.script || reel.description || ""}
+                        colorTheme={content?.color_theme || "blue"}
+                        isActive={index === activeIndex}
+                      />
                     );
                   })() : isYouTubeUrl(reel.video_url) ? (
                     <iframe
