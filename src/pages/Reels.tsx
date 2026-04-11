@@ -32,6 +32,36 @@ function isYouTubeUrl(url: string): boolean {
   return !!extractYouTubeId(url);
 }
 
+function isGeneratedReel(url: string): boolean {
+  return url.startsWith("generated://");
+}
+
+function parseGeneratedContent(url: string): { hook: string; script: string; color_theme: string } | null {
+  if (!url.startsWith("generated://")) return null;
+  try {
+    return JSON.parse(decodeURIComponent(url.slice("generated://".length)));
+  } catch {
+    return null;
+  }
+}
+
+const GENERATED_COLORS: Record<string, { bg: string; accent: string }> = {
+  blue: { bg: "from-blue-600 via-blue-800 to-indigo-900", accent: "text-blue-200" },
+  purple: { bg: "from-purple-600 via-purple-800 to-indigo-900", accent: "text-purple-200" },
+  green: { bg: "from-emerald-600 via-emerald-800 to-teal-900", accent: "text-emerald-200" },
+  orange: { bg: "from-orange-500 via-orange-700 to-red-900", accent: "text-orange-200" },
+  red: { bg: "from-red-500 via-red-700 to-rose-900", accent: "text-red-200" },
+  pink: { bg: "from-pink-500 via-pink-700 to-purple-900", accent: "text-pink-200" },
+};
+
+interface ReelSuggestion {
+  title: string;
+  script: string;
+  hook: string;
+  topic: string;
+  color_theme: string;
+}
+
 interface Reel {
   id: string;
   uploaded_by: string;
