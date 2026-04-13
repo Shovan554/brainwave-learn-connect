@@ -254,27 +254,6 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <>
-          {/* ── Overdue Alert Banner ── */}
-          {pastDue.length > 0 && (
-            <div
-              className="mb-6 flex items-center gap-3 rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 cursor-pointer hover:bg-destructive/15 transition-colors"
-              onClick={() => setPastDueOpen(true)}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-destructive">
-                  {pastDue.length} overdue assignment{pastDue.length > 1 ? "s" : ""} need{pastDue.length === 1 ? "s" : ""} your attention
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {pastDue[0]?.title}{pastDue.length > 1 ? ` and ${pastDue.length - 1} more` : ""} — click to review
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-destructive shrink-0" />
-            </div>
-          )}
-
           {/* ── AI Suggestion Banner ── */}
           <AIDashboardInsight userToken={session?.access_token ?? null} />
 
