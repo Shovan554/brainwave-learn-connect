@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { AIDashboardInsight } from "@/components/AIDashboardInsight";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
+
 import {
   BookOpen, Clock, ArrowRight, Plus, Loader2, Sparkles,
   GraduationCap, AlertTriangle, Flame, CheckCircle, FileWarning,
-  Calendar, Trophy, TrendingUp, X, ChevronDown,
+  Calendar, Trophy, X, ChevronDown,
 } from "lucide-react";
 
 interface PrioritizedAssignment {
@@ -64,7 +64,6 @@ export default function StudentDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pastDueOpen, setPastDueOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
-  const [gradesOpen, setGradesOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   useEffect(() => {
     if (!user) return;
@@ -296,83 +295,6 @@ export default function StudentDashboard() {
         </Card>
       </div>
 
-      {/* ── Course Grades ── */}
-      {courseGrades.length > 0 && (
-        <div className="mb-6">
-          <button
-            onClick={() => setGradesOpen(v => !v)}
-            className="mb-3 flex items-center gap-2 w-full text-left group"
-          >
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <h2 className="text-base font-display font-semibold">Course Grades</h2>
-            <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${gradesOpen ? "rotate-180" : ""}`} />
-          </button>
-          {gradesOpen && (
-            <Card className="overflow-hidden border border-border animate-in fade-in-0 slide-in-from-top-2 duration-200">
-              <CardContent className="p-6">
-                {/* Legend */}
-                <div className="flex flex-wrap gap-3 mb-5">
-                  {[
-                    { letter: "A", label: "90-100%", color: "hsl(var(--primary))" },
-                    { letter: "B", label: "80-89%", color: "hsl(152 69% 53%)" },
-                    { letter: "C", label: "70-79%", color: "hsl(45 93% 58%)" },
-                    { letter: "D", label: "60-69%", color: "hsl(25 95% 63%)" },
-                    { letter: "F", label: "<60%", color: "hsl(var(--destructive))" },
-                  ].map(g => (
-                    <div key={g.letter} className="flex items-center gap-1.5">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
-                      <span className="text-[11px] text-muted-foreground">{g.letter} ({g.label})</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  {courseGrades.map(cg => {
-                    const pct = cg.percentage ?? 0;
-                    const letter = cg.percentage !== null
-                      ? pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F"
-                      : "—";
-                    const color = cg.percentage !== null
-                      ? pct >= 90 ? "hsl(var(--primary))" : pct >= 80 ? "hsl(152 69% 53%)" : pct >= 70 ? "hsl(45 93% 58%)" : pct >= 60 ? "hsl(25 95% 63%)" : "hsl(var(--destructive))"
-                      : "hsl(var(--muted))";
-
-                    return (
-                      <div
-                        key={cg.course_id}
-                        className="group cursor-pointer rounded-xl p-3 transition-all duration-300 hover:bg-muted/50 hover:scale-[1.01]"
-                        onClick={() => navigate("/student/grades")}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium group-hover:text-primary transition-colors truncate max-w-[60%]">
-                            {cg.course_title}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{pct > 0 ? `${pct.toFixed(1)}%` : "No grades"}</span>
-                            <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold text-white shadow-sm" style={{ backgroundColor: color }}>
-                              {letter}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="relative h-4 rounded-full bg-muted/60 overflow-hidden">
-                          <div
-                            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
-                            style={{
-                              width: `${Math.max(pct, 2)}%`,
-                              backgroundColor: color,
-                              boxShadow: `0 0 10px 1px ${color}`,
-                              opacity: 0.9,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
 
       {/* ── Past Due Dialog ── */}
       <Dialog open={pastDueOpen} onOpenChange={setPastDueOpen}>
@@ -530,40 +452,6 @@ export default function StudentDashboard() {
         </>
       )}
 
-      {/* Courses */}
-      <div className="mb-3 flex items-center gap-2">
-        <GraduationCap className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-display font-semibold">My Courses</h2>
-      </div>
-
-      {courses.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center py-10 text-center">
-            <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/30" />
-            <p className="mb-2 text-sm text-muted-foreground">No courses yet</p>
-            <p className="text-xs text-muted-foreground">Join a course using an invite code from your teacher</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c: any) => (
-            <Card key={c.id} className="group relative overflow-hidden transition-all duration-200 hover:shadow-sm cursor-pointer border border-border hover:border-primary/30">
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-display">{c.title}</CardTitle>
-                <p className="text-xs text-muted-foreground">{c.term}</p>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" size="sm" asChild className="w-full rounded-lg text-xs group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
-                  <Link to={`/student/courses/${c.id}`}>
-                    View Course <ArrowRight className="ml-1.5 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </DashboardLayout>
   );
 }
