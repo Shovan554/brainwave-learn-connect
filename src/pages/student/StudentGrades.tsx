@@ -183,9 +183,10 @@ export default function StudentGrades() {
                             <TableCell className="font-medium">{sub.assignment_title}</TableCell>
                             <TableCell className="text-right">
                               {sub.grade !== null ? (
-                                <Badge variant={gradeColor(sub.grade, sub.points)}>
-                                  {sub.grade}
-                                </Badge>
+                                (() => {
+                                  const gc = gradeColor(sub.grade, sub.points);
+                                  return <Badge variant={gc.variant} className={gc.className}>{sub.grade}</Badge>;
+                                })()
                               ) : (
                                 <span className="text-muted-foreground text-xs">—</span>
                               )}
