@@ -62,6 +62,20 @@ export default function AdminAnalytics() {
     setLoading(false);
   };
 
+  const handleResetData = async () => {
+    setResetting(true);
+    try {
+      const { error } = await supabase.functions.invoke("reset-analytics");
+      if (error) throw error;
+      toast.success("Analytics data reset successfully");
+      await fetchData();
+    } catch (err: any) {
+      toast.error("Failed to reset data: " + (err.message || "Unknown error"));
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (authLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/login" replace />;
 
