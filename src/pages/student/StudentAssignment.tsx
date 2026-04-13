@@ -248,7 +248,43 @@ export default function StudentAssignment() {
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Submission form - full width when not yet submitted */}
+      {!submission && (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Submit Assignment</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Your Response</Label>
+              <Textarea
+                placeholder="Write your answer or notes..."
+                value={submissionText}
+                onChange={(e) => setSubmissionText(e.target.value)}
+                rows={8}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Attach File (optional)</Label>
+              <div className="flex items-center gap-3">
+                <Label htmlFor="sub-file-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-muted transition-colors">
+                  <Upload className="h-4 w-4" /> Choose File
+                </Label>
+                <Input id="sub-file-upload" type="file" className="hidden" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                {selectedFile && <span className="text-sm text-muted-foreground truncate">{selectedFile.name}</span>}
+              </div>
+            </div>
+
+            <Button onClick={handleSubmit} disabled={submitting || (!submissionText.trim() && !selectedFile)} className="w-full gap-2">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Submit Assignment
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className={`grid gap-6 ${submission ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
         {/* Left: Assignment details & files */}
         <div className="space-y-6">
           {/* Assignment Files from teacher */}
