@@ -359,9 +359,9 @@ export default function StudentAssignment() {
           )}
         </div>
 
-        {/* Right: Submission / Grade panel + AI Help */}
+        {/* Right: Submission details / Grade panel + AI Help */}
         <div className="space-y-6">
-          {submission ? (
+          {submission && (
             <>
               {/* Existing submission details */}
               <Card>
@@ -412,75 +412,6 @@ export default function StudentAssignment() {
                 </Card>
               )}
             </>
-          ) : (
-            /* Submission form */
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Submit Assignment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Your Response</Label>
-                  <Textarea
-                    placeholder="Write your answer or notes..."
-                    value={submissionText}
-                    onChange={(e) => setSubmissionText(e.target.value)}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Attach File (optional)</Label>
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="sub-file-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-muted transition-colors">
-                      <Upload className="h-4 w-4" /> Choose File
-                    </Label>
-                    <input id="sub-file-upload" type="file" className="hidden" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} disabled={submitting} />
-                    {selectedFile && <span className="text-sm text-muted-foreground truncate max-w-[200px]">{selectedFile.name}</span>}
-                  </div>
-                </div>
-
-                {/* Preview selected file */}
-                {selectedFile && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">Preview</p>
-                    {/\.(png|jpg|jpeg|gif|webp)$/i.test(selectedFile.name) && (
-                      <img
-                        src={URL.createObjectURL(selectedFile)}
-                        alt={selectedFile.name}
-                        className="w-full max-h-[300px] object-contain rounded-lg border bg-muted/30"
-                      />
-                    )}
-                    {/\.pdf$/i.test(selectedFile.name) && (
-                      <iframe
-                        src={URL.createObjectURL(selectedFile)}
-                        className="w-full rounded-lg border bg-muted/30"
-                        style={{ height: "350px" }}
-                        title="File preview"
-                      />
-                    )}
-                    {!/\.(png|jpg|jpeg|gif|webp|pdf)$/i.test(selectedFile.name) && (
-                      <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <span className="text-sm">{selectedFile.name}</span>
-                      </div>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedFile(null)} className="text-xs text-destructive">
-                      Remove file
-                    </Button>
-                  </div>
-                )}
-
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting || (!submissionText.trim() && !selectedFile)}
-                  className="w-full gap-2"
-                >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                  Submit Assignment
-                </Button>
-              </CardContent>
-            </Card>
           )}
 
           {/* AI Assignment Helper */}
