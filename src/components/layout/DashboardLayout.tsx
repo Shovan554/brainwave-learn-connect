@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSidebarMobile } from "@/hooks/useSidebarMobile";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
   const { theme } = useTheme();
@@ -26,30 +27,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       <main className={`${mainMargin} min-h-screen relative overflow-hidden transition-all duration-300`}>
-        {role === "student" ? (
-          <div
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              backgroundImage: theme === "light"
-                ? "linear-gradient(to top, #fff1eb 0%, #ace0f9 100%)"
-                : "linear-gradient(to top, #cc208e 0%, #6713d2 100%)",
-              opacity: theme === "light" ? 0.3 : 0.2,
-            }}
-          />
-        ) : (
-          <div
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
-                linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px),
-                linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px)
-              `,
-              backgroundSize: "100px 100px, 100px 100px, 20px 20px, 20px 20px",
-            }}
-          />
-        )}
+        {/* Clean subtle background - no doodles */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            backgroundImage: theme === "light"
+              ? "linear-gradient(to bottom, hsl(var(--background)), hsl(210 20% 96%))"
+              : "linear-gradient(to bottom, hsl(var(--background)), hsl(250 20% 6%))",
+            opacity: 1,
+          }}
+        />
         <div className="relative z-[1] p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
