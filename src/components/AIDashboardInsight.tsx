@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, RefreshCw, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,13 @@ export function AIDashboardInsight({ userToken }: Props) {
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+
+  // Auto-fetch on mount
+  useEffect(() => {
+    if (userToken && !insight && !dismissed) {
+      fetchInsight();
+    }
+  }, [userToken]);
 
   const fetchInsight = async () => {
     if (!userToken) return;
@@ -35,53 +41,41 @@ export function AIDashboardInsight({ userToken }: Props) {
   if (dismissed) return null;
 
   return (
-    <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-transparent overflow-hidden relative">
-      <CardContent className="p-4 flex items-start gap-3">
-        <div className="shrink-0 mt-0.5 rounded-lg bg-primary/10 p-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">AI Advisor</span>
+    <div className="mb-6 flex items-start gap-3 rounded-lg border border-primary/15 bg-primary/5 px-4 py-3">
+      <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        {loading ? (
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="h-3.5 w-2/3" />
           </div>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          ) : insight ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown>{insight}</ReactMarkdown>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">Click to get personalized advice</p>
-              <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs" onClick={fetchInsight}>
-                <Sparkles className="h-3 w-3" /> Generate Advice
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="shrink-0 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-primary"
-            onClick={() => fetchInsight()}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            onClick={() => setDismissed(true)}
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        ) : insight ? (
+          <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+            <ReactMarkdown>{insight}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Loading your personalized advice…</p>
+        )}
+      </div>
+      <div className="shrink-0 flex items-center gap-0.5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-primary"
+          onClick={() => fetchInsight()}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+          onClick={() => setDismissed(true)}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
   );
 }
