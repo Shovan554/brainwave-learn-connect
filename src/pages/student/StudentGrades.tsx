@@ -156,7 +156,7 @@ export default function StudentGrades() {
                     <CardTitle className="text-base">{cg.course_title}</CardTitle>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant={badge.variant} className={badge.className}>{badge.label}</Badge>
                     <Button variant="ghost" size="sm" asChild className="rounded-xl">
                       <Link to={`/student/courses/${cg.course_id}`}>
                         <ArrowRight className="h-4 w-4" />
