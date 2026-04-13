@@ -32,7 +32,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             style={{
               backgroundImage: theme === "light"
                 ? "linear-gradient(to top, #fff1eb 0%, #ace0f9 100%)"
-                : "linear-gradient(to top, #0250c5 0%, #d43f8d 100%)",
+                : "linear-gradient(to top, #cc208e 0%, #6713d2 100%)",
               opacity: theme === "light" ? 0.3 : 0.2,
             }}
           />
