@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const STORAGE_KEY = "ai-dashboard-insight";
+
 interface Props {
   userToken: string | null;
 }
@@ -14,22 +16,24 @@ export function AIDashboardInsight({ userToken }: Props) {
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  // Auto-fetch on mount
+  // Load cached insight on mount
   useEffect(() => {
-    if (userToken && !insight && !dismissed) {
-      fetchInsight();
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      setInsight(cached);
     }
-  }, [userToken]);
+  }, []);
 
   const fetchInsight = async () => {
     if (!userToken) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("dashboard-insight", {
+      const { data } = await supabase.functions.invoke("dashboard-insight", {
         body: { userToken },
       });
       if (data?.insight) {
         setInsight(data.insight);
+        localStorage.setItem(STORAGE_KEY, data.insight);
       }
     } catch (e) {
       console.error("Failed to fetch AI insight:", e);
@@ -54,18 +58,19 @@ export function AIDashboardInsight({ userToken }: Props) {
             <ReactMarkdown>{insight}</ReactMarkdown>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Loading your personalized advice…</p>
+          <p className="text-sm text-muted-foreground">Click generate to get personalized advice from your AI advisor.</p>
         )}
       </div>
-      <div className="shrink-0 flex items-center gap-0.5">
+      <div className="shrink-0 flex items-center gap-1">
         <Button
           variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-primary"
-          onClick={() => fetchInsight()}
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+          onClick={fetchInsight}
           disabled={loading}
         >
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          {insight ? "Regenerate" : "Generate"}
         </Button>
         <Button
           variant="ghost"
