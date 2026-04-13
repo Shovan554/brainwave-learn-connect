@@ -282,19 +282,25 @@ export function AppSidebar() {
                       {coursesOpen && (
                         <div className="mt-0.5 space-y-0.5">
                           {courses.map((c: any) => (
-                            <NavLink
-                              key={c.id}
-                              to={
-                                role === "teacher"
-                                  ? `/teacher/courses/${c.id}`
-                                  : `/student/courses/${c.id}`
-                              }
-                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
-                              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                            >
-                              <BookOpen className="h-3.5 w-3.5" />
-                              <span className="truncate">{c.title}</span>
-                            </NavLink>
+                            <Tooltip key={c.id}>
+                              <TooltipTrigger asChild>
+                                <NavLink
+                                  to={
+                                    role === "teacher"
+                                      ? `/teacher/courses/${c.id}`
+                                      : `/student/courses/${c.id}`
+                                  }
+                                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+                                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                                >
+                                  <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{c.title}</span>
+                                </NavLink>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" sideOffset={8}>
+                                {c.title}
+                              </TooltipContent>
+                            </Tooltip>
                           ))}
                         </div>
                       )}
