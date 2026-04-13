@@ -65,13 +65,15 @@ export default function StudentDashboard() {
   const [pastDueOpen, setPastDueOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
   const [todoOpen, setTodoOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (!user) return;
     loadData();
   }, [user]);
 
   const loadData = async () => {
-    // Get enrolled courses
+    setLoading(true);
     const { data: enrollments } = await supabase
       .from("enrollments")
       .select("course_id, courses(id, title, term, invite_code)")
@@ -84,12 +86,12 @@ export default function StudentDashboard() {
       setAssignments([]);
       setPastDue([]);
       setCourseGrades([]);
+      setLoading(false);
       return;
     }
 
     const courseIds = courseList.map((c: any) => c.id);
 
-    // Get all assignments + submissions in parallel
     const [assignRes, subRes] = await Promise.all([
       supabase.from("assignments").select("*").in("course_id", courseIds).eq("is_published", true),
       supabase.from("assignment_submissions").select("assignment_id, grade, graded_at").eq("student_id", user!.id),
@@ -104,7 +106,6 @@ export default function StudentDashboard() {
 
     const now = Date.now();
 
-    // Past due (not submitted)
     const pastDueList: PastDueAssignment[] = allAssignments
       .filter(a => a.due_date && new Date(a.due_date).getTime() < now && !submittedIds.has(a.id))
       .map(a => ({
@@ -118,14 +119,12 @@ export default function StudentDashboard() {
       .sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
     setPastDue(pastDueList);
 
-    // All unsubmitted (including past due)
     const prioritized: PrioritizedAssignment[] = allAssignments
       .filter(a => !submittedIds.has(a.id))
       .map(a => {
         const courseName = courseList.find((c: any) => c.id === a.course_id)?.title || "";
         const dueMs = a.due_date ? new Date(a.due_date).getTime() : now + 30 * 24 * 60 * 60 * 1000;
         const isPastDue = a.due_date && dueMs < now;
-        // Past due items get highest priority (large score)
         const urgency = isPastDue ? 0.1 : Math.max(1, (dueMs - now) / (1000 * 60 * 60));
         const score = ((a.weight || 1) * (a.points || 1)) / (urgency * Math.max(1, a.estimated_time_minutes || 30));
         return { ...a, course_title: courseName, priority_score: score };
@@ -133,7 +132,6 @@ export default function StudentDashboard() {
       .sort((a, b) => b.priority_score - a.priority_score);
     setAssignments(prioritized);
 
-    // Course grades
     const grades: CourseGrade[] = courseList.map((course: any) => {
       const courseAssignments = allAssignments.filter(a => a.course_id === course.id);
       const graded = courseAssignments
@@ -154,6 +152,7 @@ export default function StudentDashboard() {
       };
     });
     setCourseGrades(grades);
+    setLoading(false);
   };
 
   const joinCourse = async () => {
@@ -227,231 +226,282 @@ export default function StudentDashboard() {
         </Dialog>
       </div>
 
-      {/* ── AI Suggestion Banner ── */}
-      <AIDashboardInsight userToken={session?.access_token ?? null} />
-
-      {/* ── Metrics Strip ── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
-        {/* Past Due */}
-        <Card
-          className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border ${pastDue.length > 0 ? "border-destructive/30" : "border-border"}`}
-          onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${pastDue.length > 0 ? "bg-destructive/10" : "bg-muted"}`}>
-              <FileWarning className={`h-5 w-5 ${pastDue.length > 0 ? "text-destructive" : "text-muted-foreground"}`} />
-            </div>
-            <div>
-              <span className="text-2xl font-display font-bold">{pastDue.length}</span>
-              <p className="text-xs text-muted-foreground">Past Due</p>
-            </div>
-            {pastDue.length > 0 && <Badge variant="destructive" className="ml-auto text-[10px] px-1.5">{pastDue.length}</Badge>}
-          </CardContent>
-        </Card>
-
-        {/* Due Soon */}
-        <Card
-          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
-          onClick={() => assignments.length > 0 && setDueOpen(true)}
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <span className="text-2xl font-display font-bold">{assignments.length}</span>
-              <p className="text-xs text-muted-foreground">Due Soon</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Submitted */}
-        <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
-              <CheckCircle className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <span className="text-2xl font-display font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
-              <p className="text-xs text-muted-foreground">Submitted</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Overall Grade */}
-        <Card
-          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
-          onClick={() => navigate("/student/grades")}
-        >
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
-              <Trophy className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <span className="text-2xl font-display font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
-              <p className="text-xs text-muted-foreground">Overall Grade</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-
-      {/* ── Past Due Dialog ── */}
-      <Dialog open={pastDueOpen} onOpenChange={setPastDueOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileWarning className="h-5 w-5 text-destructive" /> Past Due Assignments
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {pastDue.map(a => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-3 cursor-pointer hover:bg-destructive/10 transition-colors"
-                onClick={() => { setPastDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts</p>
-                </div>
-                <div className="text-right shrink-0 ml-3">
-                  <Badge variant="destructive" className="text-[10px]">
-                    {new Date(a.due_date).toLocaleDateString()}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-            {pastDue.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No past due assignments 🎉</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Due Soon Dialog ── */}
-      <Dialog open={dueOpen} onOpenChange={setDueOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" /> Upcoming Assignments
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {assignments.map(a => {
-              const hours = a.due_date ? (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) : null;
-              return (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => { setDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm truncate">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+      {loading ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="border border-border">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-muted animate-pulse" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-5 w-12 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-16 bg-muted rounded animate-pulse" />
                   </div>
-                  <Badge variant={urgencyColor(a) as any} className="text-[10px] shrink-0 ml-3">
-                    {a.due_date
-                      ? hours !== null && hours < 24
-                        ? `${Math.max(1, Math.round(hours))}h`
-                        : hours !== null && hours < 72
-                        ? `${Math.round(hours / 24)}d`
-                        : new Date(a.due_date).toLocaleDateString()
-                      : "No date"}
-                  </Badge>
-                </div>
-              );
-            })}
-            {assignments.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No upcoming assignments 🎉</p>
-            )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Priority Queue */}
-      <button
-        onClick={() => setTodoOpen(v => !v)}
-        className="mb-3 flex items-center gap-2 w-full text-left group"
-      >
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-display font-semibold">What To Do Next</h2>
-        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${todoOpen ? "rotate-180" : ""}`} />
-      </button>
-
-      {todoOpen && (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="border border-border">
+                <CardContent className="p-4">
+                  <div className="h-4 w-32 bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-3 w-48 bg-muted rounded animate-pulse" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
         <>
-          {assignments.length === 0 ? (
-            <Card className="mb-8 border-dashed bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-              <CardContent className="flex flex-col items-center py-10 text-center">
-                <GraduationCap className="mb-3 h-12 w-12 text-green-500/60" />
-                <p className="text-base font-semibold text-foreground">You're all clear! 🎉</p>
-                <p className="mt-1 text-sm text-muted-foreground">No upcoming assignments — enjoy your free time</p>
+          {/* ── Overdue Alert Banner ── */}
+          {pastDue.length > 0 && (
+            <div
+              className="mb-6 flex items-center gap-3 rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 cursor-pointer hover:bg-destructive/15 transition-colors"
+              onClick={() => setPastDueOpen(true)}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-destructive">
+                  {pastDue.length} overdue assignment{pastDue.length > 1 ? "s" : ""} need{pastDue.length === 1 ? "s" : ""} your attention
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {pastDue[0]?.title}{pastDue.length > 1 ? ` and ${pastDue.length - 1} more` : ""} — click to review
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-destructive shrink-0" />
+            </div>
+          )}
+
+          {/* ── AI Suggestion Banner ── */}
+          <AIDashboardInsight userToken={session?.access_token ?? null} />
+
+          {/* ── Metrics Strip ── */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
+            {/* Past Due */}
+            <Card
+              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 ${
+                pastDue.length > 0
+                  ? "border-destructive/60 bg-destructive/5 shadow-sm shadow-destructive/10"
+                  : "border-border"
+              }`}
+              onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                  pastDue.length > 0 ? "bg-destructive text-destructive-foreground" : "bg-muted"
+                }`}>
+                  <FileWarning className={`h-5 w-5 ${pastDue.length > 0 ? "" : "text-muted-foreground"}`} />
+                </div>
+                <div>
+                  <span className={`text-2xl font-display font-bold ${pastDue.length > 0 ? "text-destructive" : ""}`}>{pastDue.length}</span>
+                  <p className="text-xs text-muted-foreground">Past Due</p>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-              {assignments.slice(0, 5).map((a, i) => {
-                const isPastDue = a.due_date && new Date(a.due_date).getTime() < Date.now();
-                const isUrgent = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
-                const isSoon = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
-                return (
-                  <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border ${
-                    i === 0
-                      ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
-                      : i === 1
-                      ? "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-transparent"
-                      : "hover:border-primary/20"
-                  }`}>
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          {i === 0 && (
-                            <Badge className="bg-destructive text-destructive-foreground text-xs gap-1">
-                              <Flame className="h-3 w-3" /> Top Priority
-                            </Badge>
-                          )}
-                          {i === 1 && (
-                            <Badge className="bg-orange-500 text-white text-xs gap-1">
-                              <AlertTriangle className="h-3 w-3" /> High
-                            </Badge>
-                          )}
-                          {i === 2 && (
-                            <Badge variant="secondary" className="text-xs gap-1">
-                              <Sparkles className="h-3 w-3" /> Medium
-                            </Badge>
-                          )}
-                          {isPastDue ? (
-                            <Badge variant="destructive" className="text-xs gap-1">
-                              <FileWarning className="h-3 w-3" /> Past Due
-                            </Badge>
-                          ) : (
-                            <Badge variant={urgencyColor(a) as any} className="text-xs">
-                              {a.due_date ? (
-                                isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
-                                isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
-                                new Date(a.due_date).toLocaleDateString()
-                              ) : "No due date"}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className={`mt-1.5 font-medium ${i === 0 ? "text-destructive dark:text-red-400" : ""}`}>{a.title}</p>
+
+            {/* Due Soon */}
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
+              onClick={() => assignments.length > 0 && setDueOpen(true)}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <span className="text-2xl font-display font-bold">{assignments.length}</span>
+                  <p className="text-xs text-muted-foreground">Due Soon</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Submitted */}
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
+                  <CheckCircle className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <span className="text-2xl font-display font-bold">{submittedCount}<span className="text-sm text-muted-foreground font-normal">/{totalAssignments}</span></span>
+                  <p className="text-xs text-muted-foreground">Submitted</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Overall Grade */}
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
+              onClick={() => navigate("/student/grades")}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
+                  <Trophy className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <span className="text-2xl font-display font-bold">{overallGpa !== null ? `${overallGpa.toFixed(1)}%` : "—"}</span>
+                  <p className="text-xs text-muted-foreground">Overall Grade</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── Past Due Dialog ── */}
+          <Dialog open={pastDueOpen} onOpenChange={setPastDueOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileWarning className="h-5 w-5 text-destructive" /> Past Due Assignments
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {pastDue.map(a => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-3 cursor-pointer hover:bg-destructive/10 transition-colors"
+                    onClick={() => { setPastDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{a.title}</p>
+                      <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts</p>
+                    </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <Badge variant="destructive" className="text-[10px]">
+                        {new Date(a.due_date).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {pastDue.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No past due assignments 🎉</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Due Soon Dialog ── */}
+          <Dialog open={dueOpen} onOpenChange={setDueOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" /> Upcoming Assignments
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {assignments.map(a => {
+                  const hours = a.due_date ? (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) : null;
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => { setDueOpen(false); navigate(`/student/courses/${a.course_id}/assignments/${a.id}`); }}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{a.title}</p>
                         <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
                       </div>
-                      <Button variant="ghost" size="sm" asChild className="rounded-lg">
-                        <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      <Badge variant={urgencyColor(a) as any} className="text-[10px] shrink-0 ml-3">
+                        {a.due_date
+                          ? hours !== null && hours < 24
+                            ? `${Math.max(1, Math.round(hours))}h`
+                            : hours !== null && hours < 72
+                            ? `${Math.round(hours / 24)}d`
+                            : new Date(a.due_date).toLocaleDateString()
+                          : "No date"}
+                      </Badge>
+                    </div>
+                  );
+                })}
+                {assignments.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No upcoming assignments 🎉</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Priority Queue */}
+          <button
+            onClick={() => setTodoOpen(v => !v)}
+            className="mb-3 flex items-center gap-2 w-full text-left group"
+          >
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-display font-semibold">What To Do Next</h2>
+            <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 ${todoOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {todoOpen && (
+            <>
+              {assignments.length === 0 ? (
+                <Card className="mb-8 border-dashed border-success/30 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                  <CardContent className="flex flex-col items-center py-10 text-center">
+                    <CheckCircle className="mb-3 h-10 w-10 text-success/50" />
+                    <p className="text-base font-semibold text-foreground">You're all caught up!</p>
+                    <p className="mt-1 text-sm text-muted-foreground">No pending assignments — great work.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="mb-8 space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                  {assignments.slice(0, 5).map((a, i) => {
+                    const isPastDue = a.due_date && new Date(a.due_date).getTime() < Date.now();
+                    const isUrgent = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
+                    const isSoon = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
+                    return (
+                      <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border ${
+                        isPastDue
+                          ? "border-destructive/50 bg-destructive/5"
+                          : isUrgent
+                          ? "border-warning/40 bg-warning/5"
+                          : i === 0
+                          ? "border-primary/30 bg-primary/5"
+                          : "hover:border-primary/20"
+                      }`}>
+                        <CardContent className="flex items-center justify-between p-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {isPastDue && (
+                                <Badge variant="destructive" className="text-xs gap-1">
+                                  <FileWarning className="h-3 w-3" /> Overdue
+                                </Badge>
+                              )}
+                              {!isPastDue && i === 0 && (
+                                <Badge className="bg-primary text-primary-foreground text-xs gap-1">
+                                  <Flame className="h-3 w-3" /> Top Priority
+                                </Badge>
+                              )}
+                              {!isPastDue && isUrgent && (
+                                <Badge className="bg-warning text-warning-foreground text-xs gap-1">
+                                  <AlertTriangle className="h-3 w-3" /> Urgent
+                                </Badge>
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                {a.due_date ? (
+                                  isPastDue ? `Due ${new Date(a.due_date).toLocaleDateString()}` :
+                                  isUrgent ? `Due in ${Math.max(1, Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60)))}h` :
+                                  isSoon ? `Due in ${Math.round((new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d` :
+                                  new Date(a.due_date).toLocaleDateString()
+                                ) : "No due date"}
+                              </Badge>
+                            </div>
+                            <p className={`mt-1.5 font-medium ${isPastDue ? "text-destructive" : ""}`}>{a.title}</p>
+                            <p className="text-xs text-muted-foreground">{a.course_title} · {a.points} pts · ~{a.estimated_time_minutes}min</p>
+                          </div>
+                          <Button variant="ghost" size="sm" asChild className="rounded-lg shrink-0">
+                            <Link to={`/student/courses/${a.course_id}/assignments/${a.id}`}>
+                              <ArrowRight className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
-
     </DashboardLayout>
   );
 }
