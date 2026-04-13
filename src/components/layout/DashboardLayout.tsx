@@ -4,9 +4,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSidebarMobile } from "@/hooks/useSidebarMobile";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import studentBgLight from "@/assets/student-bg-light.jpg";
-import studentBgDark from "@/assets/student-bg-dark.jpg";
-
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
   const { theme } = useTheme();
