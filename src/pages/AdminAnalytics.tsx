@@ -7,8 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Loader2, Eye, MousePointerClick, Users, TrendingUp } from "lucide-react";
+import { Loader2, Eye, MousePointerClick, Users, TrendingUp, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -30,6 +33,8 @@ export default function AdminAnalytics() {
   const [clickEvents, setClickEvents] = useState<ClickEventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("7d");
+
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -55,6 +60,20 @@ export default function AdminAnalytics() {
     setPageViews((pvRes.data || []) as PageViewRow[]);
     setClickEvents((ceRes.data || []) as ClickEventRow[]);
     setLoading(false);
+  };
+
+  const handleResetData = async () => {
+    setResetting(true);
+    try {
+      const { error } = await supabase.functions.invoke("reset-analytics");
+      if (error) throw error;
+      toast.success("Analytics data reset successfully");
+      await fetchData();
+    } catch (err: any) {
+      toast.error("Failed to reset data: " + (err.message || "Unknown error"));
+    } finally {
+      setResetting(false);
+    }
   };
 
   if (authLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -111,17 +130,41 @@ export default function AdminAnalytics() {
             <h1 className="text-2xl font-display font-bold text-foreground">Admin Research Portal</h1>
             <p className="text-sm text-muted-foreground">User interaction analytics for research & iteration</p>
           </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1d">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={resetting}>
+                  {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                  Reset Data
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset all analytics data?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all page views and click events. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Reset Everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1d">Last 24 hours</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
