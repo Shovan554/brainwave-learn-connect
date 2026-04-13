@@ -148,15 +148,10 @@ export function AppSidebar() {
       ],
     },
     {
-      label: "Discover",
+      label: "Community",
       links: [
         { to: "/explore", label: "Explore", icon: Compass },
         { to: "/reels", label: "Reels", icon: Film },
-      ],
-    },
-    {
-      label: "Communication",
-      links: [
         { to: "/messages", label: "Messages", icon: MessageCircle },
       ],
     },
