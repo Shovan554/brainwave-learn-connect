@@ -103,19 +103,22 @@ export default function StudentGrades() {
     setLoading(false);
   };
 
+  // Consistent grade color system: A (90+) = success, B (80+) = primary, C (70+) = warning, below = destructive
   const gradeColor = (grade: number | null, points: number | null) => {
-    if (grade === null || !points) return "secondary";
+    if (grade === null || !points) return { variant: "secondary" as const, className: "" };
     const pct = (grade / points) * 100;
-    if (pct >= 90) return "default";
-    if (pct >= 70) return "secondary";
-    return "destructive";
+    if (pct >= 90) return { variant: "default" as const, className: "bg-success text-success-foreground" };
+    if (pct >= 80) return { variant: "default" as const, className: "bg-primary text-primary-foreground" };
+    if (pct >= 70) return { variant: "default" as const, className: "bg-warning text-warning-foreground" };
+    return { variant: "destructive" as const, className: "" };
   };
 
   const averageBadge = (avg: number | null) => {
-    if (avg === null) return { label: "No grades", variant: "secondary" as const };
-    if (avg >= 90) return { label: `${avg.toFixed(1)}%`, variant: "default" as const };
-    if (avg >= 70) return { label: `${avg.toFixed(1)}%`, variant: "secondary" as const };
-    return { label: `${avg.toFixed(1)}%`, variant: "destructive" as const };
+    if (avg === null) return { label: "No grades", variant: "secondary" as const, className: "" };
+    if (avg >= 90) return { label: `${avg.toFixed(1)}%`, variant: "default" as const, className: "bg-success text-success-foreground" };
+    if (avg >= 80) return { label: `${avg.toFixed(1)}%`, variant: "default" as const, className: "bg-primary text-primary-foreground" };
+    if (avg >= 70) return { label: `${avg.toFixed(1)}%`, variant: "default" as const, className: "bg-warning text-warning-foreground" };
+    return { label: `${avg.toFixed(1)}%`, variant: "destructive" as const, className: "" };
   };
 
   return (
@@ -153,7 +156,7 @@ export default function StudentGrades() {
                     <CardTitle className="text-base">{cg.course_title}</CardTitle>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant={badge.variant} className={badge.className}>{badge.label}</Badge>
                     <Button variant="ghost" size="sm" asChild className="rounded-xl">
                       <Link to={`/student/courses/${cg.course_id}`}>
                         <ArrowRight className="h-4 w-4" />
@@ -180,9 +183,10 @@ export default function StudentGrades() {
                             <TableCell className="font-medium">{sub.assignment_title}</TableCell>
                             <TableCell className="text-right">
                               {sub.grade !== null ? (
-                                <Badge variant={gradeColor(sub.grade, sub.points)}>
-                                  {sub.grade}
-                                </Badge>
+                                (() => {
+                                  const gc = gradeColor(sub.grade, sub.points);
+                                  return <Badge variant={gc.variant} className={gc.className}>{sub.grade}</Badge>;
+                                })()
                               ) : (
                                 <span className="text-muted-foreground text-xs">—</span>
                               )}

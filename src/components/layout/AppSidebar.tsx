@@ -96,8 +96,8 @@ function SectionGroup({
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
             >
-              <link.icon className="h-4 w-4" />
-              {link.label}
+              <link.icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{link.label}</span>
             </NavLink>
           ))}
         </div>
@@ -148,15 +148,10 @@ export function AppSidebar() {
       ],
     },
     {
-      label: "Discover",
+      label: "Community",
       links: [
         { to: "/explore", label: "Explore", icon: Compass },
         { to: "/reels", label: "Reels", icon: Film },
-      ],
-    },
-    {
-      label: "Communication",
-      links: [
         { to: "/messages", label: "Messages", icon: MessageCircle },
       ],
     },
@@ -170,19 +165,14 @@ export function AppSidebar() {
         { to: "/calendar", label: "Calendar", icon: CalendarDays },
         { to: "/analytics", label: "Analytics", icon: BarChart3 },
         { to: "/student/grades", label: "Grades", icon: GraduationCap },
+        { to: "/student/readings", label: "My Readings", icon: BookOpen },
       ],
     },
     {
-      label: "Discover",
+      label: "Community",
       links: [
-        { to: "/student/readings", label: "My Readings", icon: BookOpen },
         { to: "/explore", label: "Explore", icon: Compass },
         { to: "/reels", label: "Reels", icon: Film },
-      ],
-    },
-    {
-      label: "Communication",
-      links: [
         { to: "/messages", label: "Messages", icon: MessageCircle },
       ],
     },
@@ -292,19 +282,25 @@ export function AppSidebar() {
                       {coursesOpen && (
                         <div className="mt-0.5 space-y-0.5">
                           {courses.map((c: any) => (
-                            <NavLink
-                              key={c.id}
-                              to={
-                                role === "teacher"
-                                  ? `/teacher/courses/${c.id}`
-                                  : `/student/courses/${c.id}`
-                              }
-                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
-                              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                            >
-                              <BookOpen className="h-3.5 w-3.5" />
-                              <span className="truncate">{c.title}</span>
-                            </NavLink>
+                            <Tooltip key={c.id}>
+                              <TooltipTrigger asChild>
+                                <NavLink
+                                  to={
+                                    role === "teacher"
+                                      ? `/teacher/courses/${c.id}`
+                                      : `/student/courses/${c.id}`
+                                  }
+                                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
+                                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                                >
+                                  <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{c.title}</span>
+                                </NavLink>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" sideOffset={8}>
+                                {c.title}
+                              </TooltipContent>
+                            </Tooltip>
                           ))}
                         </div>
                       )}
