@@ -4,9 +4,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSidebarMobile } from "@/hooks/useSidebarMobile";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import studentBgLight from "@/assets/student-bg-light.jpg";
-import studentBgDark from "@/assets/student-bg-dark.jpg";
-
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
   const { theme } = useTheme();
@@ -33,11 +30,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div
             className="pointer-events-none absolute inset-0 z-0"
             style={{
-              backgroundImage: `url(${theme === "light" ? studentBgLight : studentBgDark})`,
-              backgroundSize: theme === "light" ? "800px" : "cover",
-              backgroundRepeat: theme === "light" ? "repeat" : "no-repeat",
-              backgroundPosition: "center",
-              opacity: theme === "light" ? 0.08 : 0.15,
+              backgroundImage: theme === "light"
+                ? "linear-gradient(to top, #fff1eb 0%, #ace0f9 100%)"
+                : "linear-gradient(to top, #0250c5 0%, #d43f8d 100%)",
+              opacity: theme === "light" ? 0.3 : 0.2,
             }}
           />
         ) : (
