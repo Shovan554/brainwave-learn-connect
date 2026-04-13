@@ -165,19 +165,14 @@ export function AppSidebar() {
         { to: "/calendar", label: "Calendar", icon: CalendarDays },
         { to: "/analytics", label: "Analytics", icon: BarChart3 },
         { to: "/student/grades", label: "Grades", icon: GraduationCap },
+        { to: "/student/readings", label: "My Readings", icon: BookOpen },
       ],
     },
     {
-      label: "Discover",
+      label: "Community",
       links: [
-        { to: "/student/readings", label: "My Readings", icon: BookOpen },
         { to: "/explore", label: "Explore", icon: Compass },
         { to: "/reels", label: "Reels", icon: Film },
-      ],
-    },
-    {
-      label: "Communication",
-      links: [
         { to: "/messages", label: "Messages", icon: MessageCircle },
       ],
     },
