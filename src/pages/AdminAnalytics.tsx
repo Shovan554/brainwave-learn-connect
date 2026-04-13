@@ -34,6 +34,8 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("7d");
 
+  const [resetting, setResetting] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     fetchData();
