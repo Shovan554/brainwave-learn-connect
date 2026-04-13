@@ -96,8 +96,8 @@ function SectionGroup({
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5"
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
             >
-              <link.icon className="h-4 w-4" />
-              {link.label}
+              <link.icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{link.label}</span>
             </NavLink>
           ))}
         </div>
