@@ -234,7 +234,7 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
         {/* Past Due */}
         <Card
-          className={`cursor-pointer transition-all hover:shadow-sm border ${pastDue.length > 0 ? "border-destructive/30" : "border-border"}`}
+          className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border ${pastDue.length > 0 ? "border-destructive/30" : "border-border"}`}
           onClick={() => pastDue.length > 0 && setPastDueOpen(true)}
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -251,7 +251,7 @@ export default function StudentDashboard() {
 
         {/* Due Soon */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-sm border border-border"
+          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
           onClick={() => assignments.length > 0 && setDueOpen(true)}
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -266,7 +266,7 @@ export default function StudentDashboard() {
         </Card>
 
         {/* Submitted */}
-        <Card className="transition-all hover:shadow-sm border border-border">
+        <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
               <CheckCircle className="h-5 w-5 text-success" />
@@ -280,7 +280,7 @@ export default function StudentDashboard() {
 
         {/* Overall Grade */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-sm border border-border"
+          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border"
           onClick={() => navigate("/student/grades")}
         >
           <CardContent className="p-4 flex items-center gap-3">
@@ -396,7 +396,7 @@ export default function StudentDashboard() {
                 const isUrgent = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 24;
                 const isSoon = !isPastDue && a.due_date && (new Date(a.due_date).getTime() - Date.now()) / (1000 * 60 * 60) < 72;
                 return (
-                  <Card key={a.id} className={`group transition-all duration-200 hover:shadow-sm border ${
+                  <Card key={a.id} className={`group transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border ${
                     i === 0
                       ? "border-destructive/50 bg-gradient-to-r from-destructive/8 via-destructive/4 to-transparent shadow-sm shadow-destructive/10"
                       : i === 1
