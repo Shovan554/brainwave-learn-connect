@@ -359,9 +359,10 @@ export default function Messages() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-6rem)] rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex h-[calc(100dvh-6rem)] rounded-xl border border-border bg-card overflow-hidden">
         {/* Conversations sidebar */}
-        <div className="w-80 border-r border-border flex flex-col">
+        {showSidebar && (
+        <div className={`${isMobile ? 'w-full' : 'w-80'} border-r border-border flex flex-col`}>
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h2 className="font-semibold text-lg">Messages</h2>
             <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
@@ -500,8 +501,10 @@ export default function Messages() {
             )}
           </ScrollArea>
         </div>
+        )}
 
         {/* Chat area */}
+        {showChatArea && (
         <div className="flex-1 flex flex-col">
           {selectedConvo ? (
             <>
