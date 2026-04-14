@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Send, Paperclip, Plus, Search, Image, FileText, X, Trash2, Film, Play, Users, Check } from "lucide-react";
+import { Send, Paperclip, Plus, Search, Image, FileText, X, Trash2, Film, Play, Users, Check, ArrowLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -352,12 +353,16 @@ export default function Messages() {
     ? selectedConvoData?.participants.map(p => p.name).join(", ") || "Group"
     : selectedConvoData?.participants?.[0]?.name || "Chat";
   const otherAvatar = !isGroup ? selectedConvoData?.participants?.[0]?.avatar_url : undefined;
+  const isMobile = useIsMobile();
+  const showChatArea = !isMobile || selectedConvo;
+  const showSidebar = !isMobile || !selectedConvo;
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-6rem)] rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex h-[calc(100dvh-6rem)] rounded-xl border border-border bg-card overflow-hidden">
         {/* Conversations sidebar */}
-        <div className="w-80 border-r border-border flex flex-col">
+        {showSidebar && (
+        <div className={`${isMobile ? 'w-full' : 'w-80'} border-r border-border flex flex-col`}>
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h2 className="font-semibold text-lg">Messages</h2>
             <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
@@ -496,12 +501,19 @@ export default function Messages() {
             )}
           </ScrollArea>
         </div>
+        )}
 
         {/* Chat area */}
+        {showChatArea && (
         <div className="flex-1 flex flex-col">
           {selectedConvo ? (
             <>
               <div className="p-4 border-b border-border flex items-center gap-3">
+                {isMobile && (
+                  <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => setSelectedConvo(null)}>
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                )}
                 {isGroup ? (
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Users className="h-4 w-4 text-primary" />
@@ -624,6 +636,7 @@ export default function Messages() {
             </div>
           )}
         </div>
+        )}
       </div>
     </DashboardLayout>
   );

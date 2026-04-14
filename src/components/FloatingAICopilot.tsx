@@ -192,6 +192,8 @@ export function FloatingAICopilot() {
   return (
     <>
       {/* Floating button */}
+      {/* Floating button - hidden on mobile when panel is open */}
+      {!(open && typeof window !== 'undefined' && window.innerWidth < 640) && (
       <motion.button
         onClick={() => setOpen(!open)}
         className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg ${
@@ -217,6 +219,7 @@ export function FloatingAICopilot() {
           )}
         </AnimatePresence>
       </motion.button>
+      )}
 
       {/* Glow ring when closed */}
       {!open && (
@@ -235,7 +238,7 @@ export function FloatingAICopilot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className="fixed bottom-24 right-6 z-50 flex h-[520px] w-[400px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+            className="fixed bottom-0 right-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden border border-border bg-card shadow-2xl sm:bottom-24 sm:right-6 sm:h-[520px] sm:w-[400px] sm:rounded-2xl"
           >
             {/* Header */}
             <div className="relative flex items-center gap-3 bg-primary px-4 py-3.5 overflow-hidden">
