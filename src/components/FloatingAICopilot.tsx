@@ -192,6 +192,8 @@ export function FloatingAICopilot() {
   return (
     <>
       {/* Floating button */}
+      {/* Floating button - hidden on mobile when panel is open */}
+      {!(open && typeof window !== 'undefined' && window.innerWidth < 640) && (
       <motion.button
         onClick={() => setOpen(!open)}
         className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg ${
@@ -217,6 +219,7 @@ export function FloatingAICopilot() {
           )}
         </AnimatePresence>
       </motion.button>
+      )}
 
       {/* Glow ring when closed */}
       {!open && (
