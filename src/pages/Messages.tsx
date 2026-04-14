@@ -508,12 +508,12 @@ export default function Messages() {
         <div className="flex-1 flex flex-col">
           {selectedConvo ? (
             <>
-              {isMobile && (
-                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setSelectedConvo(null)}>
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              )}
-              <div className="p-4 border-b border-border flex items-center gap-3 flex-1">
+              <div className="p-4 border-b border-border flex items-center gap-3">
+                {isMobile && (
+                  <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => setSelectedConvo(null)}>
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                )}
                 {isGroup ? (
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Users className="h-4 w-4 text-primary" />
