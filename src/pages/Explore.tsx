@@ -307,18 +307,18 @@ export default function Explore() {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+      <div className="flex items-center justify-between mb-6 gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <Compass className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-bold tracking-tight">Explore</h1>
-            <p className="text-xs text-muted-foreground">See what everyone's working on</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">See what everyone's working on</p>
           </div>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl shadow-lg shadow-primary/20">
-          <Plus className="h-4 w-4" /> New Post
+        <Button onClick={() => setCreateOpen(true)} className="gap-2 rounded-xl shadow-lg shadow-primary/20 shrink-0" size="sm">
+          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Post</span><span className="sm:hidden">Post</span>
         </Button>
       </div>
 
@@ -430,7 +430,7 @@ export default function Explore() {
 
       {/* Create Post Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg rounded-2xl">
+        <DialogContent className="max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto mx-2">
           <DialogHeader>
             <DialogTitle>Create a Post</DialogTitle>
           </DialogHeader>
@@ -474,7 +474,7 @@ export default function Explore() {
 
       {/* Comments Dialog */}
       <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-w-md rounded-2xl max-h-[85dvh] mx-2">
           <DialogHeader>
             <DialogTitle>Comments</DialogTitle>
           </DialogHeader>
@@ -536,7 +536,7 @@ export default function Explore() {
 
       {/* Share Dialog */}
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="max-w-sm rounded-2xl">
+        <DialogContent className="max-w-sm rounded-2xl mx-2">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-4 w-4 text-primary" /> Share Post
