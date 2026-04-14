@@ -353,6 +353,9 @@ export default function Messages() {
     ? selectedConvoData?.participants.map(p => p.name).join(", ") || "Group"
     : selectedConvoData?.participants?.[0]?.name || "Chat";
   const otherAvatar = !isGroup ? selectedConvoData?.participants?.[0]?.avatar_url : undefined;
+  const isMobile = useIsMobile();
+  const showChatArea = !isMobile || selectedConvo;
+  const showSidebar = !isMobile || !selectedConvo;
 
   return (
     <DashboardLayout>
