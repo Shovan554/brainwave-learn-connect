@@ -419,14 +419,63 @@ export default function CourseDetail() {
     return <DashboardLayout><p>Course not found.</p></DashboardLayout>;
   }
 
+  const [editingCourse, setEditingCourse] = useState(false);
+  const [courseEditForm, setCourseEditForm] = useState({ title: "", description: "", term: "" });
+
+  const startEditingCourse = () => {
+    setCourseEditForm({ title: course.title, description: course.description || "", term: course.term || "" });
+    setEditingCourse(true);
+  };
+
+  const saveCourseEdit = async () => {
+    const { error } = await supabase
+      .from("courses")
+      .update({ title: courseEditForm.title, description: courseEditForm.description, term: courseEditForm.term })
+      .eq("id", id!);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCourse({ ...course, ...courseEditForm });
+    setEditingCourse(false);
+    toast({ title: "Course updated" });
+  };
+
   return (
     <DashboardLayout>
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
-          <p className="text-muted-foreground">{course.term}</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={copyInviteCode}>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        {editingCourse ? (
+          <div className="flex-1 space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="course-title-edit">Title</Label>
+              <Input id="course-title-edit" value={courseEditForm.title} onChange={(e) => setCourseEditForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="course-term-edit">Term</Label>
+              <Input id="course-term-edit" value={courseEditForm.term} onChange={(e) => setCourseEditForm(f => ({ ...f, term: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="course-desc-edit">Description</Label>
+              <Textarea id="course-desc-edit" value={courseEditForm.description} onChange={(e) => setCourseEditForm(f => ({ ...f, description: e.target.value }))} rows={3} />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={saveCourseEdit}><Save className="mr-2 h-3 w-3" />Save</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditingCourse(false)}>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 group">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
+              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={startEditingCourse}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <p className="text-muted-foreground">{course.term}</p>
+            {course.description && <p className="text-sm text-muted-foreground mt-1">{course.description}</p>}
+          </div>
+        )}
+        <Button variant="outline" size="sm" onClick={copyInviteCode} className="shrink-0">
           <Copy className="mr-2 h-3 w-3" />
           {course.invite_code}
         </Button>
