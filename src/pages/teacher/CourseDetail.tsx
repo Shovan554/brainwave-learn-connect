@@ -412,6 +412,9 @@ export default function CourseDetail() {
     toast({ title: "Copied!", description: "Invite code copied to clipboard" });
   };
 
+  const [editingCourse, setEditingCourse] = useState(false);
+  const [courseEditForm, setCourseEditForm] = useState({ title: "", description: "", term: "" });
+
   if (loading) {
     return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
   }
@@ -419,8 +422,6 @@ export default function CourseDetail() {
     return <DashboardLayout><p>Course not found.</p></DashboardLayout>;
   }
 
-  const [editingCourse, setEditingCourse] = useState(false);
-  const [courseEditForm, setCourseEditForm] = useState({ title: "", description: "", term: "" });
 
   const startEditingCourse = () => {
     setCourseEditForm({ title: course.title, description: course.description || "", term: course.term || "" });
