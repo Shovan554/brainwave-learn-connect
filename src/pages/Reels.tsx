@@ -856,6 +856,40 @@ export default function Reels() {
                       </div>
                       <span className="text-xs font-semibold text-white/80">Share</span>
                     </button>
+
+                    {/* Delete (own reels only) */}
+                    {user && reel.uploaded_by === user.id && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex flex-col items-center gap-1 group"
+                          >
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-destructive/40 transition-all duration-300">
+                              <Trash2 className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-semibold text-white/80">Delete</span>
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this reel?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{reel.title}" will be permanently removed. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteReel(reel)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
 
                   {/* Bottom info */}
