@@ -710,6 +710,29 @@ export default function Reels() {
                             </div>
                           )}
                         </div>
+                      ) : uploadMode === "tiktok" ? (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">TikTok Video URL</label>
+                          <Input
+                            placeholder="https://www.tiktok.com/@user/video/123..."
+                            value={uploadYoutubeUrl}
+                            onChange={e => setUploadYoutubeUrl(e.target.value)}
+                            className="rounded-xl"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Paste a public TikTok video link. Short links (vm.tiktok.com) work too.
+                          </p>
+                          {uploadYoutubeUrl && extractTikTokId(uploadYoutubeUrl) && /\/video\/\d+/.test(uploadYoutubeUrl) && (
+                            <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[260px] bg-black">
+                              <iframe
+                                src={`https://www.tiktok.com/embed/v2/${extractTikTokId(uploadYoutubeUrl)}`}
+                                className="w-full h-full"
+                                allow="encrypted-media;"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div>
                           <label className="block text-sm font-medium mb-1">Video File</label>
@@ -734,10 +757,18 @@ export default function Reels() {
                       )}
                       <Button
                         onClick={handleUpload}
-                        disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                        disabled={
+                          uploading ||
+                          !uploadTitle.trim() ||
+                          (uploadMode === "file"
+                            ? !uploadFile
+                            : uploadMode === "tiktok"
+                              ? !extractTikTokId(uploadYoutubeUrl)
+                              : !extractYouTubeId(uploadYoutubeUrl))
+                        }
                         className="w-full rounded-xl"
                       >
-                        {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
+                        {uploading ? "Adding..." : uploadMode === "file" ? "Upload Reel" : "Add Reel"}
                       </Button>
                     </>
                   )}
