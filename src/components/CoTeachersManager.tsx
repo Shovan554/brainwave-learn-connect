@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Trash2, Crown } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Crown, Search } from "lucide-react";
 
 interface Props {
   courseId: string;
@@ -14,18 +14,27 @@ interface Props {
 }
 
 interface TeacherRow {
-  id?: string; // course_teachers row id (undefined for primary)
+  id?: string;
   teacher_id: string;
   name: string;
   isPrimary: boolean;
+}
+
+interface SearchResult {
+  user_id: string;
+  name: string;
 }
 
 export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }: Props) {
   const { toast } = useToast();
   const [rows, setRows] = useState<TeacherRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -43,7 +52,7 @@ export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }:
     }
     const profMap = new Map(profiles.map((p) => [p.user_id, p.name]));
 
-    const list: TeacherRow[] = [
+    setRows([
       { teacher_id: primaryTeacherId, name: primaryRes.data?.name || "Primary Teacher", isPrimary: true },
       ...co.map((c: any) => ({
         id: c.id,
@@ -51,54 +60,53 @@ export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }:
         name: profMap.get(c.teacher_id) || "Unknown",
         isPrimary: false,
       })),
-    ];
-    setRows(list);
+    ]);
     setLoading(false);
   };
 
-  useEffect(() => {
-    load();
-  }, [courseId, primaryTeacherId]);
+  useEffect(() => { load(); }, [courseId, primaryTeacherId]);
 
-  const addCoTeacher = async () => {
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed) return;
-    setAdding(true);
-    try {
-      // Find profile by name match OR ask user to provide name. We don't have email in profiles,
-      // so search profiles by name (case-insensitive) as a fallback.
-      const { data: matches } = await supabase
+  // Debounced search across teacher profiles
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      // Get all teacher user_ids
+      const { data: teacherRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "teacher");
+      const teacherIds = (teacherRoles || []).map((r: any) => r.user_id);
+      if (teacherIds.length === 0) {
+        setResults([]); setSearching(false); return;
+      }
+      const { data: profs } = await supabase
         .from("profiles")
         .select("user_id, name")
-        .ilike("name", `%${trimmed}%`)
-        .limit(5);
+        .in("user_id", teacherIds)
+        .ilike("name", `%${q}%`)
+        .limit(8);
+      // Exclude already-added
+      const taken = new Set(rows.map((r) => r.teacher_id));
+      setResults((profs || []).filter((p) => !taken.has(p.user_id)));
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query, rows]);
 
-      if (!matches || matches.length === 0) {
-        toast({ title: "No teacher found", description: "Enter the teacher's exact name as it appears on their profile.", variant: "destructive" });
-        return;
-      }
-      if (matches.length > 1) {
-        toast({ title: "Multiple matches", description: `Found ${matches.length} profiles. Be more specific.`, variant: "destructive" });
-        return;
-      }
-      const target = matches[0];
-      if (target.user_id === primaryTeacherId || rows.some((r) => r.teacher_id === target.user_id)) {
-        toast({ title: "Already a teacher", description: `${target.name} is already on this course.`, variant: "destructive" });
-        return;
-      }
+  // Close dropdown on outside click
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
 
-      // Verify they have the teacher role
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", target.user_id)
-        .eq("role", "teacher")
-        .maybeSingle();
-      if (!roleRow) {
-        toast({ title: "Not a teacher", description: `${target.name} does not have a teacher account.`, variant: "destructive" });
-        return;
-      }
-
+  const addCoTeacher = async (target: SearchResult) => {
+    setAdding(target.user_id);
+    try {
       const { error } = await supabase.from("course_teachers").insert({
         course_id: courseId,
         teacher_id: target.user_id,
@@ -106,12 +114,12 @@ export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }:
       });
       if (error) throw error;
       toast({ title: "Co-teacher added", description: `${target.name} can now manage this course.` });
-      setEmail("");
+      setQuery(""); setResults([]); setOpen(false);
       await load();
     } catch (e: any) {
       toast({ title: "Failed to add", description: e.message, variant: "destructive" });
     } finally {
-      setAdding(false);
+      setAdding(null);
     }
   };
 
@@ -133,17 +141,44 @@ export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }:
         <CardTitle className="text-base">Co-Professors</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            placeholder="Teacher's name (as on their profile)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addCoTeacher()}
-          />
-          <Button onClick={addCoTeacher} disabled={adding || !email.trim()}>
-            {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            Add
-          </Button>
+        <div ref={wrapRef} className="relative">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search teachers by name..."
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
+            />
+          </div>
+          {open && query.trim() && (
+            <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover shadow-lg">
+              {searching ? (
+                <div className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Searching...
+                </div>
+              ) : results.length === 0 ? (
+                <div className="p-3 text-sm text-muted-foreground">No matching teachers found.</div>
+              ) : (
+                results.map((r) => (
+                  <button
+                    key={r.user_id}
+                    onClick={() => addCoTeacher(r)}
+                    disabled={adding === r.user_id}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-accent disabled:opacity-50"
+                  >
+                    <span className="font-medium">{r.name}</span>
+                    {adding === r.user_id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Co-professors get full management rights: edit content, grade submissions, manage assignments.
