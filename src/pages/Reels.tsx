@@ -843,6 +843,14 @@ export default function Reels() {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
+                  ) : isTikTokUrl(reel.video_url) ? (
+                    <iframe
+                      key={`tiktok-${reel.id}-${index === activeIndex ? "active" : "idle"}`}
+                      src={`https://www.tiktok.com/embed/v2/${extractTikTokId(reel.video_url)}${index === activeIndex ? "?autoplay=1" : ""}`}
+                      className="w-full h-full bg-black"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   ) : (
                     <div className="bg-black w-full h-full">
                       <video
