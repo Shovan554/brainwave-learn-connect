@@ -331,6 +331,19 @@ export default function Reels() {
           return;
         }
         videoUrl = uploadYoutubeUrl.trim();
+      } else if (uploadMode === "tiktok") {
+        const tikId = extractTikTokId(uploadYoutubeUrl);
+        if (!uploadYoutubeUrl.trim() || !tikId) {
+          toast.error("Please enter a valid TikTok video URL");
+          setUploading(false);
+          return;
+        }
+        if (!/\/video\/\d+/.test(uploadYoutubeUrl)) {
+          toast.error("Please use the full TikTok URL (with /video/...). Open the short link in a browser and copy the address.");
+          setUploading(false);
+          return;
+        }
+        videoUrl = uploadYoutubeUrl.trim();
       } else {
         if (!uploadFile) { setUploading(false); return; }
         const filePath = `${user.id}/${Date.now()}-${uploadFile.name}`;
