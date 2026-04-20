@@ -44,6 +44,24 @@ function isYouTubeUrl(url: string): boolean {
   return !!extractYouTubeId(url);
 }
 
+function extractTikTokId(url: string): string | null {
+  const patterns = [
+    /tiktok\.com\/@[^/]+\/video\/(\d+)/,
+    /tiktok\.com\/v\/(\d+)/,
+    /vm\.tiktok\.com\/([A-Za-z0-9]+)/,
+    /vt\.tiktok\.com\/([A-Za-z0-9]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function isTikTokUrl(url: string): boolean {
+  return /tiktok\.com/.test(url);
+}
+
 function isGeneratedReel(url: string): boolean {
   return url.startsWith("generated://");
 }
