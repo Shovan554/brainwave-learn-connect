@@ -11,7 +11,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen } from "lucide-react";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { GeneratedReelCard } from "@/components/GeneratedReelCard";
 import { toast } from "sonner";
@@ -269,6 +280,23 @@ export default function Reels() {
     } else {
       await supabase.from("reel_likes").insert({ reel_id: reel.id, user_id: user.id });
       setReels(prev => prev.map(r => r.id === reel.id ? { ...r, liked_by_me: true, likes_count: r.likes_count + 1 } : r));
+    }
+  };
+
+  const deleteReel = async (reel: Reel) => {
+    if (!user || reel.uploaded_by !== user.id) return;
+    try {
+      // Best-effort: remove storage file if it's an uploaded mp4
+      if (reel.video_url.includes("/storage/v1/object/public/reels/")) {
+        const path = reel.video_url.split("/storage/v1/object/public/reels/")[1];
+        if (path) await supabase.storage.from("reels").remove([decodeURIComponent(path)]);
+      }
+      const { error } = await supabase.from("reels").delete().eq("id", reel.id);
+      if (error) throw error;
+      setReels(prev => prev.filter(r => r.id !== reel.id));
+      toast.success("Reel deleted");
+    } catch {
+      toast.error("Failed to delete reel");
     }
   };
 
@@ -828,6 +856,40 @@ export default function Reels() {
                       </div>
                       <span className="text-xs font-semibold text-white/80">Share</span>
                     </button>
+
+                    {/* Delete (own reels only) */}
+                    {user && reel.uploaded_by === user.id && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex flex-col items-center gap-1 group"
+                          >
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-destructive/40 transition-all duration-300">
+                              <Trash2 className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-semibold text-white/80">Delete</span>
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this reel?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{reel.title}" will be permanently removed. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteReel(reel)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
 
                   {/* Bottom info */}
