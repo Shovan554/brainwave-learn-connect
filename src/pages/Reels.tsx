@@ -44,6 +44,24 @@ function isYouTubeUrl(url: string): boolean {
   return !!extractYouTubeId(url);
 }
 
+function extractTikTokId(url: string): string | null {
+  const patterns = [
+    /tiktok\.com\/@[^/]+\/video\/(\d+)/,
+    /tiktok\.com\/v\/(\d+)/,
+    /vm\.tiktok\.com\/([A-Za-z0-9]+)/,
+    /vt\.tiktok\.com\/([A-Za-z0-9]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function isTikTokUrl(url: string): boolean {
+  return /tiktok\.com/.test(url);
+}
+
 function isGeneratedReel(url: string): boolean {
   return url.startsWith("generated://");
 }
@@ -107,7 +125,7 @@ export default function Reels() {
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploadYoutubeUrl, setUploadYoutubeUrl] = useState("");
-  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "generate">("youtube");
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "tiktok" | "generate">("youtube");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateCourseId, setGenerateCourseId] = useState("");
@@ -309,6 +327,19 @@ export default function Reels() {
       if (uploadMode === "youtube") {
         if (!uploadYoutubeUrl.trim() || !extractYouTubeId(uploadYoutubeUrl)) {
           toast.error("Please enter a valid YouTube Shorts URL");
+          setUploading(false);
+          return;
+        }
+        videoUrl = uploadYoutubeUrl.trim();
+      } else if (uploadMode === "tiktok") {
+        const tikId = extractTikTokId(uploadYoutubeUrl);
+        if (!uploadYoutubeUrl.trim() || !tikId) {
+          toast.error("Please enter a valid TikTok video URL");
+          setUploading(false);
+          return;
+        }
+        if (!/\/video\/\d+/.test(uploadYoutubeUrl)) {
+          toast.error("Please use the full TikTok URL (with /video/...). Open the short link in a browser and copy the address.");
           setUploading(false);
           return;
         }
@@ -578,10 +609,13 @@ export default function Reels() {
                <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
-                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "generate")}>
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "tiktok" | "generate")}>
                     <TabsList className="w-full rounded-xl">
                       <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
                         <Link className="h-3.5 w-3.5" /> YouTube
+                      </TabsTrigger>
+                      <TabsTrigger value="tiktok" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Film className="h-3.5 w-3.5" /> TikTok
                       </TabsTrigger>
                       <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
                         <Film className="h-3.5 w-3.5" /> Upload
@@ -689,6 +723,29 @@ export default function Reels() {
                             </div>
                           )}
                         </div>
+                      ) : uploadMode === "tiktok" ? (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">TikTok Video URL</label>
+                          <Input
+                            placeholder="https://www.tiktok.com/@user/video/123..."
+                            value={uploadYoutubeUrl}
+                            onChange={e => setUploadYoutubeUrl(e.target.value)}
+                            className="rounded-xl"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Paste a public TikTok video link. Short links (vm.tiktok.com) work too.
+                          </p>
+                          {uploadYoutubeUrl && extractTikTokId(uploadYoutubeUrl) && /\/video\/\d+/.test(uploadYoutubeUrl) && (
+                            <div className="mt-2 rounded-xl overflow-hidden aspect-[9/16] max-h-[260px] bg-black">
+                              <iframe
+                                src={`https://www.tiktok.com/embed/v2/${extractTikTokId(uploadYoutubeUrl)}`}
+                                className="w-full h-full"
+                                allow="encrypted-media;"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div>
                           <label className="block text-sm font-medium mb-1">Video File</label>
@@ -713,10 +770,18 @@ export default function Reels() {
                       )}
                       <Button
                         onClick={handleUpload}
-                        disabled={uploading || !uploadTitle.trim() || (uploadMode === "file" ? !uploadFile : !extractYouTubeId(uploadYoutubeUrl))}
+                        disabled={
+                          uploading ||
+                          !uploadTitle.trim() ||
+                          (uploadMode === "file"
+                            ? !uploadFile
+                            : uploadMode === "tiktok"
+                              ? !extractTikTokId(uploadYoutubeUrl)
+                              : !extractYouTubeId(uploadYoutubeUrl))
+                        }
                         className="w-full rounded-xl"
                       >
-                        {uploading ? "Adding..." : uploadMode === "youtube" ? "Add Reel" : "Upload Reel"}
+                        {uploading ? "Adding..." : uploadMode === "file" ? "Upload Reel" : "Add Reel"}
                       </Button>
                     </>
                   )}
@@ -774,6 +839,14 @@ export default function Reels() {
                   })() : isYouTubeUrl(reel.video_url) ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${extractYouTubeId(reel.video_url)}?autoplay=${index === activeIndex ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${extractYouTubeId(reel.video_url)}&controls=0&modestbranding=1&rel=0&playsinline=1`}
+                      className="w-full h-full bg-black"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : isTikTokUrl(reel.video_url) ? (
+                    <iframe
+                      key={`tiktok-${reel.id}-${index === activeIndex ? "active" : "idle"}`}
+                      src={`https://www.tiktok.com/embed/v2/${extractTikTokId(reel.video_url)}${index === activeIndex ? "?autoplay=1" : ""}`}
                       className="w-full h-full bg-black"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
