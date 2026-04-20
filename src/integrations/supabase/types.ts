@@ -1083,6 +1083,13 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      search_teachers: {
+        Args: { _query: string }
+        Returns: {
+          name: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "teacher" | "student"
