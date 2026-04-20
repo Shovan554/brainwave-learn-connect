@@ -125,7 +125,7 @@ export default function Reels() {
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadCourseId, setUploadCourseId] = useState<string>("");
   const [uploadYoutubeUrl, setUploadYoutubeUrl] = useState("");
-  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "generate">("youtube");
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube" | "tiktok" | "generate">("youtube");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateCourseId, setGenerateCourseId] = useState("");
@@ -596,10 +596,13 @@ export default function Reels() {
                <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Add a Reel</DialogTitle></DialogHeader>
                 <div className="space-y-4">
-                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "generate")}>
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "youtube" | "tiktok" | "generate")}>
                     <TabsList className="w-full rounded-xl">
                       <TabsTrigger value="youtube" className="flex-1 gap-1.5 rounded-lg text-xs">
                         <Link className="h-3.5 w-3.5" /> YouTube
+                      </TabsTrigger>
+                      <TabsTrigger value="tiktok" className="flex-1 gap-1.5 rounded-lg text-xs">
+                        <Film className="h-3.5 w-3.5" /> TikTok
                       </TabsTrigger>
                       <TabsTrigger value="file" className="flex-1 gap-1.5 rounded-lg text-xs">
                         <Film className="h-3.5 w-3.5" /> Upload
