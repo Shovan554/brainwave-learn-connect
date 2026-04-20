@@ -405,6 +405,30 @@ export type Database = {
           },
         ]
       }
+      course_teachers: {
+        Row: {
+          added_by: string | null
+          course_id: string
+          created_at: string
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          course_id: string
+          created_at?: string
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          added_by?: string | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          teacher_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string
