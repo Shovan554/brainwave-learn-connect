@@ -58,11 +58,31 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data: coursesData } = await supabase
+      const { data: ownedCourses } = await supabase
         .from("courses")
         .select("*, enrollments(count), content_reports(count)")
         .eq("teacher_id", user.id)
         .order("created_at", { ascending: false });
+
+      const { data: coRows } = await supabase
+        .from("course_teachers")
+        .select("course_id")
+        .eq("teacher_id", user.id);
+
+      const coIds = (coRows || [])
+        .map((r: any) => r.course_id)
+        .filter((cid: string) => !(ownedCourses || []).some((c: any) => c.id === cid));
+
+      let coCourses: any[] = [];
+      if (coIds.length > 0) {
+        const { data } = await supabase
+          .from("courses")
+          .select("*, enrollments(count), content_reports(count)")
+          .in("id", coIds);
+        coCourses = (data || []).map((c) => ({ ...c, _isCoTeacher: true }));
+      }
+
+      const coursesData = [...(ownedCourses || []), ...coCourses];
 
       if (coursesData) {
         setCourses(coursesData);
