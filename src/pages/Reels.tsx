@@ -299,6 +299,8 @@ export default function Reels() {
       toast.error("Failed to delete reel");
     }
   };
+
+  const handleUpload = async () => {
     if (!user || !uploadTitle.trim()) return;
     setUploading(true);
     try {
