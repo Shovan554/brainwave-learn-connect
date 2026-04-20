@@ -283,7 +283,22 @@ export default function Reels() {
     }
   };
 
-  const handleUpload = async () => {
+  const deleteReel = async (reel: Reel) => {
+    if (!user || reel.uploaded_by !== user.id) return;
+    try {
+      // Best-effort: remove storage file if it's an uploaded mp4
+      if (reel.video_url.includes("/storage/v1/object/public/reels/")) {
+        const path = reel.video_url.split("/storage/v1/object/public/reels/")[1];
+        if (path) await supabase.storage.from("reels").remove([decodeURIComponent(path)]);
+      }
+      const { error } = await supabase.from("reels").delete().eq("id", reel.id);
+      if (error) throw error;
+      setReels(prev => prev.filter(r => r.id !== reel.id));
+      toast.success("Reel deleted");
+    } catch {
+      toast.error("Failed to delete reel");
+    }
+  };
     if (!user || !uploadTitle.trim()) return;
     setUploading(true);
     try {
