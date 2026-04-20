@@ -72,24 +72,13 @@ export function CoTeachersManager({ courseId, primaryTeacherId, currentUserId }:
     if (!q) { setResults([]); return; }
     setSearching(true);
     const t = setTimeout(async () => {
-      // Get all teacher user_ids
-      const { data: teacherRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "teacher");
-      const teacherIds = (teacherRoles || []).map((r: any) => r.user_id);
-      if (teacherIds.length === 0) {
+      const { data, error } = await supabase.rpc("search_teachers", { _query: q });
+      if (error) {
+        console.error("Search teachers failed:", error);
         setResults([]); setSearching(false); return;
       }
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, name")
-        .in("user_id", teacherIds)
-        .ilike("name", `%${q}%`)
-        .limit(8);
-      // Exclude already-added
       const taken = new Set(rows.map((r) => r.teacher_id));
-      setResults((profs || []).filter((p) => !taken.has(p.user_id)));
+      setResults((data || []).filter((p: any) => !taken.has(p.user_id)));
       setSearching(false);
     }, 250);
     return () => clearTimeout(t);
