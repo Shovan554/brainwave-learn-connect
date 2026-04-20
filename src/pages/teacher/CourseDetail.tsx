@@ -19,6 +19,7 @@ import {
   Users, AlertTriangle, Brain, ExternalLink, ChevronDown, ChevronUp, FolderPlus, Folder, Pencil, Save, CheckCircle,
 } from "lucide-react";
 import { StudentFeedbackCard } from "@/components/StudentFeedbackCard";
+import { CoTeachersManager } from "@/components/CoTeachersManager";
 
 export default function CourseDetail() {
   const [searchParams] = useSearchParams();
@@ -488,6 +489,7 @@ export default function CourseDetail() {
           <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students ({students.length})</TabsTrigger>
+          <TabsTrigger value="coteachers">Co-Professors</TabsTrigger>
           <TabsTrigger value="ai">AI Tools</TabsTrigger>
           <TabsTrigger value="reports">Reports ({reports.length})</TabsTrigger>
         </TabsList>
@@ -791,6 +793,13 @@ export default function CourseDetail() {
                 />
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        {/* Co-Teachers Tab */}
+        <TabsContent value="coteachers">
+          {user && course && (
+            <CoTeachersManager courseId={id!} primaryTeacherId={course.teacher_id} currentUserId={user.id} />
           )}
         </TabsContent>
 
