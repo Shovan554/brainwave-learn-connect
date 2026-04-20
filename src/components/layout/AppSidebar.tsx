@@ -126,14 +126,25 @@ export function AppSidebar() {
           );
         });
     } else if (role === "teacher") {
-      supabase
-        .from("courses")
-        .select("id, title")
-        .eq("teacher_id", user.id)
-        .order("created_at", { ascending: false })
-        .then(({ data }) => {
-          setCourses(data || []);
-        });
+      Promise.all([
+        supabase
+          .from("courses")
+          .select("id, title, created_at")
+          .eq("teacher_id", user.id),
+        supabase
+          .from("course_teachers")
+          .select("courses(id, title, created_at)")
+          .eq("teacher_id", user.id),
+      ]).then(([owned, co]) => {
+        const ownedList = owned.data || [];
+        const coList = (co.data || []).map((r: any) => r.courses).filter(Boolean);
+        const seen = new Set(ownedList.map((c: any) => c.id));
+        const merged = [...ownedList, ...coList.filter((c: any) => !seen.has(c.id))];
+        merged.sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setCourses(merged);
+      });
     }
   }, [user, role]);
 
