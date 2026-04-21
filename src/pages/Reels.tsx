@@ -233,12 +233,60 @@ export default function Reels() {
     const allReels = reelsRes.data || [];
     if (!allReels.length) { setReels([]); return; }
 
+    const enrolledCourseIds = (enrollRes.data || []).map((e: any) => e.course_id);
     const myCourseIds = new Set([
-      ...(enrollRes.data || []).map((e: any) => e.course_id),
+      ...enrolledCourseIds,
       ...(teacherRes.data || []).map((c: any) => c.id),
     ]);
     const viewedIds = new Set((viewedRes.data || []).map((v: any) => v.reel_id));
     const myLikeIds = new Set((likesRes.data || []).map((l: any) => l.reel_id));
+
+    // For students: compute per-course average grade -> inverse weight
+    // (lower grade => higher weight => more reels from that course)
+    const courseWeight: Record<string, number> = {};
+    if (role === "student" && enrolledCourseIds.length > 0) {
+      const { data: assigns } = await supabase
+        .from("assignments")
+        .select("id, points, course_id")
+        .in("course_id", enrolledCourseIds)
+        .eq("is_published", true);
+      const assignList = assigns || [];
+      const assignIds = assignList.map((a: any) => a.id);
+      const assignToCourse: Record<string, string> = {};
+      const assignPoints: Record<string, number> = {};
+      for (const a of assignList) {
+        assignToCourse[a.id] = a.course_id;
+        assignPoints[a.id] = a.points || 0;
+      }
+
+      let subs: any[] = [];
+      if (assignIds.length > 0) {
+        const { data } = await supabase
+          .from("assignment_submissions")
+          .select("assignment_id, grade")
+          .eq("student_id", user.id)
+          .in("assignment_id", assignIds);
+        subs = data || [];
+      }
+
+      // Aggregate: per-course earned vs possible
+      const earned: Record<string, number> = {};
+      const possible: Record<string, number> = {};
+      for (const s of subs) {
+        if (s.grade == null) continue;
+        const cid = assignToCourse[s.assignment_id];
+        if (!cid) continue;
+        earned[cid] = (earned[cid] || 0) + Number(s.grade);
+        possible[cid] = (possible[cid] || 0) + (assignPoints[s.assignment_id] || 0);
+      }
+
+      for (const cid of enrolledCourseIds) {
+        const pct = possible[cid] > 0 ? (earned[cid] / possible[cid]) * 100 : 70; // default to 70 if no grades
+        // Inverse weight: lower grade => higher weight. Range ~ 1.0 (100%) to ~3.0 (0%).
+        const weight = 1 + Math.max(0, (100 - pct)) / 50;
+        courseWeight[cid] = weight;
+      }
+    }
 
     // Fetch uploader profiles
     const uploaderIds = [...new Set(allReels.map((r: any) => r.uploaded_by))];
@@ -248,27 +296,74 @@ export default function Reels() {
       .in("user_id", uploaderIds);
     const profileMap = Object.fromEntries(profiles?.map((p: any) => [p.user_id, p.name]) || []);
 
-    // Build enriched reels with relevance score
-    const enriched: (Reel & { score: number; viewed: boolean })[] = allReels.map((r: any) => {
-      const isFromMyCourse = r.course_id && myCourseIds.has(r.course_id);
+    const enriched: (Reel & { viewed: boolean; weight: number })[] = allReels.map((r: any) => {
       const viewed = viewedIds.has(r.id);
-      // Score: course-relevant first, then recency
-      const recency = new Date(r.created_at).getTime();
-      const score = (isFromMyCourse ? 1e15 : 0) + recency;
+      const weight = (r.course_id && courseWeight[r.course_id]) || 1;
       return {
         ...r,
         uploader_name: profileMap[r.uploaded_by] || "User",
         liked_by_me: myLikeIds.has(r.id),
-        score,
         viewed,
+        weight,
       };
     });
 
-    // Filter and sort
-    const filtered = showViewed ? enriched : enriched.filter(r => !r.viewed);
-    filtered.sort((a, b) => b.score - a.score);
+    const candidates = showViewed ? enriched : enriched.filter(r => !r.viewed);
 
-    setReels(filtered);
+    // Final ordering depends on role
+    let ordered: typeof candidates;
+
+    if (role === "student" && enrolledCourseIds.length > 0) {
+      // Group reels by course (course-less reels go to a "general" bucket)
+      const buckets: Record<string, typeof candidates> = {};
+      const general: typeof candidates = [];
+      for (const r of candidates) {
+        if (r.course_id && myCourseIds.has(r.course_id)) {
+          (buckets[r.course_id] ||= []).push(r);
+        } else {
+          general.push(r);
+        }
+      }
+      // Sort each bucket by recency
+      for (const cid of Object.keys(buckets)) {
+        buckets[cid].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      }
+      general.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Weighted round-robin: courses with higher weight get picked more often.
+      // Track a "credit" per course; each round add weight, pop highest-credit course w/ items.
+      const credits: Record<string, number> = {};
+      const courseIds = Object.keys(buckets);
+      for (const cid of courseIds) credits[cid] = 0;
+
+      ordered = [];
+      while (courseIds.some(cid => buckets[cid].length > 0)) {
+        for (const cid of courseIds) {
+          if (buckets[cid].length > 0) credits[cid] += courseWeight[cid] || 1;
+        }
+        // Pick the course with the highest credit that still has reels
+        let pick: string | null = null;
+        let max = -Infinity;
+        for (const cid of courseIds) {
+          if (buckets[cid].length > 0 && credits[cid] > max) { max = credits[cid]; pick = cid; }
+        }
+        if (!pick) break;
+        ordered.push(buckets[pick].shift()!);
+        credits[pick] -= 1;
+      }
+      // Append any reels not from enrolled courses at the end
+      ordered.push(...general);
+    } else {
+      // Teachers and others: course-relevant first, then recency
+      ordered = [...candidates].sort((a, b) => {
+        const aMine = a.course_id && myCourseIds.has(a.course_id) ? 1 : 0;
+        const bMine = b.course_id && myCourseIds.has(b.course_id) ? 1 : 0;
+        if (aMine !== bMine) return bMine - aMine;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+    }
+
+    setReels(ordered);
   }, [user, role, showViewed]);
 
   useEffect(() => { loadReels(); }, [loadReels]);

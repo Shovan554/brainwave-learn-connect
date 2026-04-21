@@ -62,6 +62,7 @@ export default function CourseDetail() {
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
+  const [effortMap, setEffortMap] = useState<Record<string, { reel_views_count: number; course_page_views_count: number; submissions_count: number }>>({});
 
   // Reports
   const [reports, setReports] = useState<any[]>([]);
@@ -192,8 +193,16 @@ export default function CourseDetail() {
         profiles: profileMap[e.student_id] || null,
       }));
       setStudents(enriched);
+      // Load effort metrics (teacher-only RPC)
+      const { data: effortRows } = await supabase.rpc("get_course_student_effort", { _course_id: id });
+      if (effortRows) {
+        const map: Record<string, any> = {};
+        for (const e of effortRows as any[]) map[e.student_id] = e;
+        setEffortMap(map);
+      }
     } else {
       setStudents([]);
+      setEffortMap({});
     }
     if (reportsRes.data) setReports(reportsRes.data);
     if (isInitial) setLoading(false);
@@ -790,6 +799,7 @@ export default function CourseDetail() {
                   courseId={id!}
                   assignments={assignments}
                   submissions={submissions}
+                  effort={effortMap[s.student_id]}
                 />
               ))}
             </div>
