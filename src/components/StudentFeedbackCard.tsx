@@ -174,6 +174,39 @@ Keep the feedback to 3-4 short paragraphs. Use markdown formatting.`;
           </div>
         </div>
 
+        {effort && (() => {
+          // Effort score: weighted blend, capped at 100. Tunable.
+          // reel views (cap 10) -> 30, page views (cap 30) -> 35, submissions vs assignments -> 35
+          const reelPart = Math.min(effort.reel_views_count, 10) / 10 * 30;
+          const pagePart = Math.min(effort.course_page_views_count, 30) / 30 * 35;
+          const submitPart = assignments.length > 0
+            ? Math.min(effort.submissions_count / assignments.length, 1) * 35
+            : (effort.submissions_count > 0 ? 35 : 0);
+          const score = Math.round(reelPart + pagePart + submitPart);
+          const tier = score >= 75 ? { label: "On fire", cls: "text-success" }
+            : score >= 50 ? { label: "Engaged", cls: "text-primary" }
+            : score >= 25 ? { label: "Building", cls: "text-warning" }
+            : { label: "Low effort", cls: "text-destructive" };
+          return (
+            <div className="mt-3 rounded-lg border bg-muted/30 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Flame className={`h-4 w-4 ${tier.cls}`} />
+                  <span className="text-sm font-medium">Effort Score</span>
+                  <span className={`text-xs font-semibold ${tier.cls}`}>{tier.label}</span>
+                </div>
+                <span className="text-sm font-semibold tabular-nums">{score}/100</span>
+              </div>
+              <Progress value={score} className="h-2" />
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" /> {effort.reel_views_count} reels watched</span>
+                <span className="inline-flex items-center gap-1"><MousePointerClick className="h-3 w-3" /> {effort.course_page_views_count} course visits</span>
+                <span className="inline-flex items-center gap-1"><FileCheck className="h-3 w-3" /> {effort.submissions_count} submissions</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {expanded && feedback && (
           <div className="mt-4 rounded-lg border bg-muted/30 p-4">
             <div className="prose prose-sm max-w-none text-sm text-foreground">
