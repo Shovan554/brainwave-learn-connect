@@ -149,6 +149,45 @@ export default function Reels() {
   const [shareSearchResults, setShareSearchResults] = useState<{ user_id: string; name: string }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
 
+  // Edit state
+  const [editReel, setEditReel] = useState<Reel | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editCourseId, setEditCourseId] = useState<string>("none");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditDialog = (reel: Reel) => {
+    setEditReel(reel);
+    setEditTitle(reel.title);
+    setEditDesc(reel.description || "");
+    setEditCourseId(reel.course_id || "none");
+  };
+
+  const saveEdit = async () => {
+    if (!editReel || !user) return;
+    if (!editTitle.trim()) { toast.error("Title is required"); return; }
+    setSavingEdit(true);
+    try {
+      const newCourseId = editCourseId && editCourseId !== "none" ? editCourseId : null;
+      const { error } = await supabase
+        .from("reels")
+        .update({
+          title: editTitle.trim(),
+          description: editDesc.trim() || null,
+          course_id: newCourseId,
+        })
+        .eq("id", editReel.id);
+      if (error) throw error;
+      setReels(prev => prev.map(r => r.id === editReel.id ? { ...r, title: editTitle.trim(), description: editDesc.trim() || null, course_id: newCourseId } : r));
+      toast.success("Reel updated");
+      setEditReel(null);
+    } catch {
+      toast.error("Failed to update reel");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   // Load teacher courses for upload
   useEffect(() => {
     if (role === "teacher" && user) {
