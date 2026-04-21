@@ -799,6 +799,7 @@ export default function CourseDetail() {
                   courseId={id!}
                   assignments={assignments}
                   submissions={submissions}
+                  effort={effortMap[s.student_id]}
                 />
               ))}
             </div>
