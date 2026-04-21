@@ -969,6 +969,19 @@ export default function Reels() {
                       <span className="text-xs font-semibold text-white/80">Share</span>
                     </button>
 
+                    {/* Edit (own reels only) */}
+                    {user && reel.uploaded_by === user.id && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditDialog(reel); }}
+                        className="flex flex-col items-center gap-1 group"
+                      >
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                          <Pencil className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-xs font-semibold text-white/80">Edit</span>
+                      </button>
+                    )}
+
                     {/* Delete (own reels only) */}
                     {user && reel.uploaded_by === user.id && (
                       <AlertDialog>
