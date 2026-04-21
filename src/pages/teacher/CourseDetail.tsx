@@ -193,8 +193,16 @@ export default function CourseDetail() {
         profiles: profileMap[e.student_id] || null,
       }));
       setStudents(enriched);
+      // Load effort metrics (teacher-only RPC)
+      const { data: effortRows } = await supabase.rpc("get_course_student_effort", { _course_id: id });
+      if (effortRows) {
+        const map: Record<string, any> = {};
+        for (const e of effortRows as any[]) map[e.student_id] = e;
+        setEffortMap(map);
+      }
     } else {
       setStudents([]);
+      setEffortMap({});
     }
     if (reportsRes.data) setReports(reportsRes.data);
     if (isInitial) setLoading(false);
