@@ -62,6 +62,7 @@ export default function CourseDetail() {
 
   // Students
   const [students, setStudents] = useState<any[]>([]);
+  const [effortMap, setEffortMap] = useState<Record<string, { reel_views_count: number; course_page_views_count: number; submissions_count: number }>>({});
 
   // Reports
   const [reports, setReports] = useState<any[]>([]);
