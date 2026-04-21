@@ -1162,6 +1162,45 @@ export default function Reels() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Reel Dialog */}
+      <Dialog open={!!editReel} onOpenChange={(open) => !open && setEditReel(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Reel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Reel title" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Optional description" rows={3} />
+            </div>
+            {role === "teacher" && teacherCourses.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Course</label>
+                <Select value={editCourseId} onValueChange={setEditCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No course</SelectItem>
+                    {teacherCourses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditReel(null)} disabled={savingEdit}>Cancel</Button>
+              <Button onClick={saveEdit} disabled={savingEdit}>
+                {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
