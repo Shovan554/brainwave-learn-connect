@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen, Trash2 } from "lucide-react";
+import { Heart, Play, Plus, Film, Volume2, VolumeX, Send, Search, Loader2, Users, RotateCcw, Link, Sparkles, Check, X, BookOpen, Trash2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -148,6 +148,45 @@ export default function Reels() {
   const [shareSearch, setShareSearch] = useState("");
   const [shareSearchResults, setShareSearchResults] = useState<{ user_id: string; name: string }[]>([]);
   const [sharing, setSharing] = useState<string | null>(null);
+
+  // Edit state
+  const [editReel, setEditReel] = useState<Reel | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editCourseId, setEditCourseId] = useState<string>("none");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditDialog = (reel: Reel) => {
+    setEditReel(reel);
+    setEditTitle(reel.title);
+    setEditDesc(reel.description || "");
+    setEditCourseId(reel.course_id || "none");
+  };
+
+  const saveEdit = async () => {
+    if (!editReel || !user) return;
+    if (!editTitle.trim()) { toast.error("Title is required"); return; }
+    setSavingEdit(true);
+    try {
+      const newCourseId = editCourseId && editCourseId !== "none" ? editCourseId : null;
+      const { error } = await supabase
+        .from("reels")
+        .update({
+          title: editTitle.trim(),
+          description: editDesc.trim() || null,
+          course_id: newCourseId,
+        })
+        .eq("id", editReel.id);
+      if (error) throw error;
+      setReels(prev => prev.map(r => r.id === editReel.id ? { ...r, title: editTitle.trim(), description: editDesc.trim() || null, course_id: newCourseId } : r));
+      toast.success("Reel updated");
+      setEditReel(null);
+    } catch {
+      toast.error("Failed to update reel");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   // Load teacher courses for upload
   useEffect(() => {
@@ -930,6 +969,19 @@ export default function Reels() {
                       <span className="text-xs font-semibold text-white/80">Share</span>
                     </button>
 
+                    {/* Edit (own reels only) */}
+                    {user && reel.uploaded_by === user.id && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditDialog(reel); }}
+                        className="flex flex-col items-center gap-1 group"
+                      >
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                          <Pencil className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-xs font-semibold text-white/80">Edit</span>
+                      </button>
+                    )}
+
                     {/* Delete (own reels only) */}
                     {user && reel.uploaded_by === user.id && (
                       <AlertDialog>
@@ -1108,6 +1160,45 @@ export default function Reels() {
               )}
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Reel Dialog */}
+      <Dialog open={!!editReel} onOpenChange={(open) => !open && setEditReel(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Reel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Reel title" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Optional description" rows={3} />
+            </div>
+            {role === "teacher" && teacherCourses.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Course</label>
+                <Select value={editCourseId} onValueChange={setEditCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No course</SelectItem>
+                    {teacherCourses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditReel(null)} disabled={savingEdit}>Cancel</Button>
+              <Button onClick={saveEdit} disabled={savingEdit}>
+                {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

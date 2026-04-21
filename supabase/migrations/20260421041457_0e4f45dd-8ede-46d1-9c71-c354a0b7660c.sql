@@ -1,0 +1,1 @@
+CREATE POLICY "Users can update own reels" ON public.reels FOR UPDATE TO authenticated USING (uploaded_by = auth.uid()) WITH CHECK (uploaded_by = auth.uid());
