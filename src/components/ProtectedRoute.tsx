@@ -10,7 +10,9 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
 
-  if (loading) {
+  // Show loader while auth is initializing OR while we have a user but
+  // their role hasn't been resolved yet (prevents wrongful redirects on refresh).
+  if (loading || (user && requiredRole && role === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
