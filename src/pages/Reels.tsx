@@ -188,11 +188,19 @@ export default function Reels() {
     }
   };
 
-  // Load teacher courses for upload
+  // Load teacher courses (owned + co-taught) for upload
   useEffect(() => {
     if (role === "teacher" && user) {
-      supabase.from("courses").select("id, title").eq("teacher_id", user.id).then(({ data }) => {
-        setTeacherCourses(data || []);
+      Promise.all([
+        supabase.from("courses").select("id, title").eq("teacher_id", user.id),
+        supabase.from("course_teachers").select("courses(id, title)").eq("teacher_id", user.id),
+      ]).then(([owned, co]) => {
+        const ownedList = (owned.data || []) as { id: string; title: string }[];
+        const coList = ((co.data || []) as any[]).map(r => r.courses).filter(Boolean) as { id: string; title: string }[];
+        const seen = new Set(ownedList.map(c => c.id));
+        const merged = [...ownedList, ...coList.filter(c => !seen.has(c.id))];
+        merged.sort((a, b) => a.title.localeCompare(b.title));
+        setTeacherCourses(merged);
       });
     }
   }, [role, user]);
@@ -201,7 +209,7 @@ export default function Reels() {
     if (!user) return;
 
     // Fetch all reels, user's course IDs, viewed reel IDs, and likes in parallel
-    const [reelsRes, enrollRes, teacherRes, viewedRes, likesRes] = await Promise.all([
+    const [reelsRes, enrollRes, ownedTeacherRes, coTeacherRes, viewedRes, likesRes] = await Promise.all([
       supabase.from("reels").select("*").order("created_at", { ascending: false }),
       role === "student"
         ? supabase.from("enrollments").select("course_id").eq("student_id", user.id)
@@ -209,9 +217,18 @@ export default function Reels() {
       role === "teacher"
         ? supabase.from("courses").select("id").eq("teacher_id", user.id)
         : Promise.resolve({ data: [] as { id: string }[] }),
+      role === "teacher"
+        ? supabase.from("course_teachers").select("course_id").eq("teacher_id", user.id)
+        : Promise.resolve({ data: [] as { course_id: string }[] }),
       supabase.from("reel_views").select("reel_id").eq("user_id", user.id),
       supabase.from("reel_likes").select("reel_id").eq("user_id", user.id),
     ]);
+    const teacherRes = {
+      data: [
+        ...((ownedTeacherRes.data || []) as { id: string }[]),
+        ...((coTeacherRes.data || []) as { course_id: string }[]).map(c => ({ id: c.course_id })),
+      ],
+    };
 
     const allReels = reelsRes.data || [];
     if (!allReels.length) { setReels([]); return; }
