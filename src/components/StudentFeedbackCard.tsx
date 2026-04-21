@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Brain, Loader2, ChevronDown, ChevronUp, Flame, Eye, MousePointerClick, FileCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface StudentFeedbackCardProps {
@@ -15,9 +16,14 @@ interface StudentFeedbackCardProps {
   courseId: string;
   assignments: any[];
   submissions: Record<string, any[]>;
+  effort?: {
+    reel_views_count: number;
+    course_page_views_count: number;
+    submissions_count: number;
+  };
 }
 
-export function StudentFeedbackCard({ student, courseId, assignments, submissions }: StudentFeedbackCardProps) {
+export function StudentFeedbackCard({ student, courseId, assignments, submissions, effort }: StudentFeedbackCardProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
