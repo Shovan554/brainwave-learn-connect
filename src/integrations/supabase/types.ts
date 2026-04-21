@@ -1062,6 +1062,15 @@ export type Database = {
         Returns: string
       }
       get_course_id_by_invite_code: { Args: { _code: string }; Returns: string }
+      get_course_student_effort: {
+        Args: { _course_id: string }
+        Returns: {
+          course_page_views_count: number
+          reel_views_count: number
+          student_id: string
+          submissions_count: number
+        }[]
+      }
       get_folder_course_id: { Args: { _folder_id: string }; Returns: string }
       get_wc_course_id: { Args: { _wc_id: string }; Returns: string }
       has_role: {
