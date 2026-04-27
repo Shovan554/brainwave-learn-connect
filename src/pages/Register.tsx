@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Loader2, GraduationCap, BookOpenCheck } from "lucide-react";
+import { Loader2, GraduationCap, BookOpenCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import brainwaveIcon from "@/assets/brainwave-icon.png";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -45,9 +46,7 @@ export default function Register() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Brain className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src={brainwaveIcon} alt="BrainWave" className="mx-auto mb-2 h-14 w-14 rounded-xl shadow-md" />
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>Join BrainWave as a teacher or student</CardDescription>
         </CardHeader>

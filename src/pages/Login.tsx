@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import brainwaveIcon from "@/assets/brainwave-icon.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -38,9 +39,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/10 px-4">
       <Card className="w-full max-w-md shadow-2xl border-border/50">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
-            <Brain className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <img src={brainwaveIcon} alt="BrainWave" className="mx-auto mb-3 h-16 w-16 rounded-2xl shadow-lg" />
           <CardTitle className="text-2xl font-extrabold">Welcome back</CardTitle>
           <CardDescription>Sign in to your BrainWave account</CardDescription>
         </CardHeader>
