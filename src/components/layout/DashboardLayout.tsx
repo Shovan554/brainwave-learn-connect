@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSidebarMobile } from "@/hooks/useSidebarMobile";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import brainwaveIcon from "@/assets/brainwave-icon.png";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
@@ -21,9 +22,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8">
           <Menu className="h-4 w-4" />
         </Button>
-        <span className="text-sm font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          BrainWave
-        </span>
+        <div className="flex items-center gap-2">
+          <img src={brainwaveIcon} alt="BrainWave" className="h-6 w-6 rounded-md" />
+          <span className="text-sm font-display font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            BrainWave
+          </span>
+        </div>
       </div>
 
       <main className={`${mainMargin} min-h-screen relative overflow-hidden transition-all duration-300`}>

@@ -26,6 +26,7 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import brainwaveIcon from "@/assets/brainwave-icon.png";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -213,15 +214,11 @@ export function AppSidebar() {
             className={`flex h-16 items-center ${collapsed ? "justify-center px-2" : "justify-between px-6"} border-b border-sidebar-border`}
           >
             {collapsed ? (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
-                <Brain className="h-5 w-5 text-sidebar-primary" />
-              </div>
+              <img src={brainwaveIcon} alt="BrainWave" className="h-9 w-9 rounded-lg shadow-md" />
             ) : (
               <>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20">
-                    <Brain className="h-5 w-5 text-sidebar-primary" />
-                  </div>
+                  <img src={brainwaveIcon} alt="BrainWave" className="h-9 w-9 rounded-lg shadow-md" />
                   <span className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-sidebar-primary to-accent bg-clip-text text-transparent">
                     BrainWave
                   </span>
